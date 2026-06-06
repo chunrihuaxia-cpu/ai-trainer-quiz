@@ -14,18 +14,15 @@ __pycache__/
 # Temp files
 *.tmp
 *.log
-pdf_text_debug.txt
 
 # Node (native/)
 native/node_modules/
 native/android/
 native/ios/
 
-# Keep important files
-!README.md
-pdf_text_debug.txt
+# Source files (keep only in repo root)
+/pdf_text_debug.txt
 *.docx
 *.pdf
-question_bank.json
-parse_questions.py
-pdf_text_debug.txt
+/question_bank.json
+/parse_questions.py
