@@ -1,0 +1,18 @@
+{
+  "name": "ai-trainer-quiz",
+  "version": "1.0.0",
+  "description": "AI训练师（三级）理论知识刷题App",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "echo 'Static PWA — no build step needed'",
+    "sync": "npx cap sync",
+    "open:ios": "npx cap open ios",
+    "open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  }
+}

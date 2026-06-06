@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# IDE
+.vscode/
+.idea/
+
+# Temp files
+*.tmp
+*.log
+pdf_text_debug.txt
+
+# Node (native/)
+native/node_modules/
+native/android/
+native/ios/
+
+# Keep important files
+!README.md
+pdf_text_debug.txt
+*.docx
+*.pdf
+question_bank.json
+parse_questions.py
+pdf_text_debug.txt
