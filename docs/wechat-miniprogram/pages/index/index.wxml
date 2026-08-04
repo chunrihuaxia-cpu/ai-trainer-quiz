@@ -1,0 +1,70 @@
+<!-- 首页：题型选择 + 进度面板 -->
+<view class="container">
+  <!-- 标题 -->
+  <view class="header">
+    <text class="header-title">📱 全媒体运营师 · 刷题</text>
+    <text class="header-sub">全媒体运营师（流量运营）三级理论知识</text>
+  </view>
+
+  <!-- 进度概览卡片 -->
+  <view class="card overview-card">
+    <text class="overview-title">📊 刷题进度</text>
+    <text class="overview-desc">选择一种题型开始刷题，或继续之前的进度</text>
+  </view>
+
+  <!-- 各题型进度条 -->
+  <view class="mode-list">
+    <view class="mode-row" wx:for="{{modes}}" wx:key="key">
+      <view class="mode-header">
+        <text class="mode-icon">{{item.icon}}</text>
+        <text class="mode-title">{{item.title}}</text>
+        <text class="mode-stats" wx:if="{{progress[item.key]}}">
+          正确 <text style="color:var(--green);font-weight:700">{{progress[item.key].c || 0}}</text>
+          · 错误 <text style="color:var(--red);font-weight:700">{{progress[item.key].w || 0}}</text>
+        </text>
+        <text class="mode-stats" wx:else>尚未开始</text>
+      </view>
+
+      <!-- 进度条 -->
+      <view class="progress-bar">
+        <view class="progress-fill" style="width:{{(progress[item.key].c + progress[item.key].w) / 300 * 100 || 0}}%;background:{{item.color}}"></view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="mode-actions">
+        <button class="btn primary" bindtap="onStart" data-mode="{{item.key}}">
+          ▶ {{ progress[item.key] && (progress[item.key].c + progress[item.key].w) > 0 ? '重刷' : '开始刷题' }}
+        </button>
+        <block wx:if="{{progress[item.key] && (progress[item.key].c + progress[item.key].w) > 0}}">
+          <button class="btn secondary" bindtap="onResume" data-mode="{{item.key}}">
+            📍 继续
+          </button>
+          <button class="btn warn" bindtap="onReset" data-mode="{{item.key}}">
+            🔄
+          </button>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 错题本入口 -->
+  <view class="card wrong-card" wx:if="{{wrongBookCount > 0}}" bindtap="onWrongBook">
+    <view class="flex-between">
+      <view>
+        <text style="font-size:18px;font-weight:700">📋 错题本</text>
+        <text style="font-size:14px;color:var(--text2);margin-left:8px">{{wrongBookCount}} 道待复习</text>
+      </view>
+      <text style="font-size:24px;color:var(--sep)">›</text>
+    </view>
+  </view>
+
+  <!-- 错题本为空或清空按钮 -->
+  <view class="card wrong-card empty-state" wx:elif="{{wrongBookCount === 0}}">
+    <view class="flex-between">
+      <text style="font-size:15px;color:var(--text2)">📋 错题本为空，继续加油！</text>
+    </view>
+  </view>
+
+  <!-- 底部安全间距 -->
+  <view style="height:40px"></view>
+</view>

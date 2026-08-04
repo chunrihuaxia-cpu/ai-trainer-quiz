@@ -1,0 +1,115 @@
+<!-- 刷题页 -->
+<view wx:if="{{loading}}" class="loading-container">
+  <view class="spinner"></view>
+  <text class="loading-text">正在加载题库…</text>
+</view>
+
+<block wx:elif="{{isComplete}}">
+  <!-- 完成页 -->
+  <view class="complete-container">
+    <view class="complete-icon">{{completeEmoji}}</view>
+    <text class="complete-title">本轮完成！</text>
+    <view class="complete-stats">
+      <text>正确：<text class="stat-green">{{correctCount}}</text> 题</text>
+      <text>错误：<text class="stat-red">{{wrongCount}}</text> 题</text>
+      <text class="stat-rate">正确率：<text class="rate-big">{{completeRate}}%</text></text>
+    </view>
+    <text class="complete-wrongbook">📋 错题本累计：{{wrongBookTotal}} 题</text>
+
+    <view class="complete-actions">
+      <button class="act-btn primary" bindtap="onRestart">🔄 重新开始</button>
+      <button class="act-btn warn" wx:if="{{sessionWrongCount > 0}}" bindtap="onReviewWrong">
+        🔍 复习本轮错题 ({{sessionWrongCount}})
+      </button>
+      <button class="act-btn danger" wx:if="{{wrongBookTotal > 0}}" bindtap="onGoWrongBook">
+        📋 错题本 ({{wrongBookTotal}}题)
+      </button>
+      <button class="act-btn secondary" bindtap="onHome">🏠 返回首页</button>
+    </view>
+  </view>
+</block>
+
+<block wx:else>
+  <!-- 顶部工具栏 -->
+  <view class="toolbar">
+    <view class="tool-row">
+      <text class="tool-progress">{{progressText}}</text>
+      <view class="tool-progress-bar">
+        <view class="tool-progress-fill" style="width:{{progressPct}}%"></view>
+      </view>
+      <text class="tool-rate" style="color:var(--green)">{{rateText}}</text>
+      <text class="tool-wrong" wx:if="{{wrongText}}" style="color:var(--red)">{{wrongText}}</text>
+    </view>
+    <view class="tool-row tool-actions">
+      <text class="tool-btn" bindtap="onToggleShuffle">
+        {{shuffleMode ? '🔀 乱序中' : '🔀 乱序'}}
+      </text>
+      <text class="tool-btn" bindtap="onJump">⏭ 跳转</text>
+      <text class="tool-btn" bindtap="onHome">🏠 首页</text>
+    </view>
+  </view>
+
+  <!-- 题目卡片 -->
+  <view class="q-card">
+    <!-- 题型标签 -->
+    <view class="q-badge badge-{{type === 'judge' ? 'judge' : type === 'single' ? 'single' : 'multi'}}">
+      {{type === 'judge' ? '判断题' : type === 'single' ? '单选题' : '多选题'}}
+    </view>
+
+    <!-- 题号 -->
+    <text class="q-number">第 {{number}} 题</text>
+
+    <!-- 题目文字 -->
+    <text class="q-text">{{questionText}}</text>
+
+    <!-- 判断题按钮 -->
+    <view wx:if="{{type === 'judge'}}" class="judge-btns">
+      <view class="judge-btn true-btn {{answered ? (userAnswer === '正确' ? (correctAnswer === '正确' ? 'correct-ans' : 'wrong-ans') : (correctAnswer === '正确' ? 'correct-ans' : '')) : ''}}"
+            bindtap="onAnswerJudge" data-answer="正确"
+            style="{{answered ? 'pointer-events:none' : ''}}">
+        <text>✓ 正确</text>
+      </view>
+      <view class="judge-btn false-btn {{answered ? (userAnswer === '错误' ? (correctAnswer === '错误' ? 'correct-ans' : 'wrong-ans') : (correctAnswer === '错误' ? 'correct-ans' : '')) : ''}}"
+            bindtap="onAnswerJudge" data-answer="错误"
+            style="{{answered ? 'pointer-events:none' : ''}}">
+        <text>✗ 错误</text>
+      </view>
+    </view>
+
+    <!-- 单选题选项 -->
+    <view wx:if="{{type === 'single'}}" class="options">
+      <view class="opt-btn {{optionStates[item.label]}}"
+            wx:for="{{options}}" wx:key="label"
+            bindtap="onAnswerSingle" data-label="{{item.label}}"
+            style="{{answered ? 'pointer-events:none' : ''}}"
+            hover-class="opt-hover">
+        <view class="opt-label {{optionStates[item.label] ? 'opt-label-active' : ''}}">{{item.label}}</view>
+        <text class="opt-text">{{item.text}}</text>
+      </view>
+    </view>
+
+    <!-- 多选题选项 -->
+    <view wx:if="{{type === 'multi'}}" class="options">
+      <view class="opt-btn {{selectedOptions.indexOf(item.label) >= 0 ? 'selected' : ''}} {{optionStates[item.label]}}"
+            wx:for="{{options}}" wx:key="label"
+            bindtap="onToggleMulti" data-label="{{item.label}}"
+            style="{{answered ? 'pointer-events:none' : ''}}"
+            hover-class="opt-hover">
+        <view class="opt-label {{selectedOptions.indexOf(item.label) >= 0 || optionStates[item.label] ? 'opt-label-active' : ''}}">{{item.label}}</view>
+        <text class="opt-text">{{item.text}}</text>
+      </view>
+
+      <button class="submit-btn" bindtap="onSubmitMulti" disabled="{{answered || selectedOptions.length === 0}}">
+        {{selectedOptions.length > 0 ? '确认提交 (' + selectedOptions.length + ')' : '请选择答案'}}
+      </button>
+    </view>
+
+    <!-- 解析区（答错时显示） -->
+    <view wx:if="{{showExplanation}}" class="explanation">
+      <text class="exp-label">📖 解析</text>
+      <text class="exp-answer">✅ 正确答案：{{correctAnswer}}</text>
+      <text class="exp-text">{{explanation}}</text>
+      <button class="next-btn" bindtap="onNext">下一题 →</button>
+    </view>
+  </view>
+</block>

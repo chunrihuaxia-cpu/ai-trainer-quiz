@@ -1,0 +1,152 @@
+/* 首页样式 */
+.container {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 标题区 */
+.header {
+  background: var(--card);
+  padding: 24rpx 32rpx;
+  text-align: center;
+  border-bottom: 1rpx solid var(--sep);
+}
+
+.header-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  display: block;
+}
+
+.header-sub {
+  font-size: 24rpx;
+  color: var(--text2);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* 概览卡片 */
+.overview-card {
+  text-align: center;
+  margin: 20rpx 32rpx;
+}
+
+.overview-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  display: block;
+}
+
+.overview-desc {
+  font-size: 26rpx;
+  color: var(--text2);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* 题型行 */
+.mode-list {
+  padding: 0 32rpx;
+}
+
+.mode-row {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.mode-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.mode-icon {
+  font-size: 36rpx;
+  margin-right: 12rpx;
+}
+
+.mode-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  flex: 1;
+}
+
+.mode-stats {
+  font-size: 24rpx;
+  color: var(--text2);
+}
+
+/* 进度条 */
+.progress-bar {
+  height: 12rpx;
+  background: var(--sep);
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.4s ease;
+}
+
+/* 操作按钮 */
+.mode-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.btn {
+  padding: 14rpx 28rpx;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  border: none;
+  line-height: 1.4;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn.primary {
+  background: var(--blue);
+  color: white;
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 2rpx solid var(--sep);
+}
+
+.btn.warn {
+  background: transparent;
+  color: var(--red);
+  border: 2rpx solid var(--sep);
+  padding: 14rpx 20rpx;
+}
+
+/* 错题本 */
+.wrong-card {
+  margin: 20rpx 32rpx;
+  padding: 28rpx;
+}
+
+.empty-state {
+  opacity: 0.6;
+}
+
+/* 卡片公用 */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
