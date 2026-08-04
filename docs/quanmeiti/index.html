@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="全媒刷题"><meta name="theme-color" content="#1677FF">
+<title>全媒体运营师刷题</title><link rel="manifest" href="manifest.json">
+<style>
+:root{--blue:#1677FF;--green:#52C41A;--red:#FF4D4F;--orange:#FA8C16;--purple:#722ED1;--bg:#F2F2F7;--card:#FFF;--text:#1A1A1A;--text2:#8E8E93;--sep:#E5E5EA;--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC',sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;min-height:100vh;padding-bottom:40px;user-select:none}
+.hidden{display:none!important}
+.header{background:var(--card);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--sep)}
+.header h1{font-size:20px;font-weight:700}.header .sub{font-size:12px;color:var(--text2)}
+.stats{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--text2)}
+.stats .score{color:var(--green);font-weight:700;font-size:16px}.stats .wrong{color:var(--red);font-size:12px}
+.progress-bar{flex:1;height:6px;background:var(--sep);border-radius:3px;overflow:hidden}
+.progress-bar .fill{height:100%;background:var(--blue);border-radius:3px;transition:.3s}
+.tool-btn{font-size:11px;padding:5px 12px;border-radius:14px;border:1px solid var(--sep);background:var(--card);cursor:pointer;font-weight:600}
+.tool-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.card{background:var(--card);border-radius:var(--radius);margin:0 12px 12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-bottom:8px}
+.badge-judge{background:#E8F5FF;color:var(--blue)}.badge-single{background:#FFF3E0;color:var(--orange)}.badge-multi{background:#F3E8FF;color:var(--purple)}
+.q-num{font-size:12px;color:var(--text2);margin-bottom:6px;display:block}
+.q-text{font-size:16px;line-height:1.7;font-weight:500;margin-bottom:16px;display:block}
+.options{display:flex;flex-direction:column;gap:8px}
+.opt-btn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border-radius:12px;border:2px solid var(--sep);background:var(--card);font-size:15px;text-align:left;cursor:pointer;transition:.15s;font-family:inherit}
+.opt-btn:active{transform:scale(.98)}
+.opt-label{width:30px;height:30px;border-radius:50%;background:#F2F2F7;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}.opt-text{flex:1}
+.judge-btns{display:flex;gap:10px}.judge-btn{flex:1;padding:16px;border-radius:14px;font-size:18px;font-weight:700;border:none;cursor:pointer;font-family:inherit;color:#fff}
+.judge-btn:active{transform:scale(.96)}.judge-true{background:var(--green)}.judge-false{background:var(--red)}
+.submit-btn{width:100%;padding:14px;border-radius:12px;background:var(--blue);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:8px;font-family:inherit}.submit-btn:disabled{background:#CCC}
+.opt-btn.correct,.opt-btn.reveal{border-color:var(--green);background:#E8F8ED}.opt-btn.correct .opt-label,.opt-btn.reveal .opt-label{background:var(--green);color:#fff}
+.opt-btn.wrong{border-color:var(--red);background:#FFECEB}.opt-btn.wrong .opt-label{background:var(--red);color:#fff}
+.opt-btn.selected{border-color:var(--blue);background:#E8F5FF}.opt-btn.selected .opt-label{background:var(--blue);color:#fff}
+.judge-btn.highlight{outline:3px solid var(--blue);outline-offset:2px}.judge-btn.faded{opacity:.4}
+.explanation{margin-top:12px;padding:14px;border-radius:12px;background:#FFF9E8;border:1px solid #FFE8A0;font-size:14px;line-height:1.6;animation:slideUp .3s}
+.exp-label{font-weight:700;font-size:12px;color:var(--orange);margin-bottom:4px}.exp-answer{font-weight:700;color:var(--green);margin-bottom:4px}
+.next-btn{width:100%;padding:12px;border-radius:10px;background:var(--blue);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-top:8px;font-family:inherit}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.dash-row{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dash-title{font-weight:700;font-size:15px}.dash-stat{font-size:12px;color:var(--text2)}
+.dash-bar{height:6px;background:#E8E8E8;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.dash-actions{display:flex;gap:6px;flex-wrap:wrap}.dash-btn{padding:7px 14px;border-radius:16px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.dash-btn.primary{background:var(--blue);color:#fff}.dash-btn.secondary{background:var(--card);color:var(--text);border:1px solid var(--sep)}.dash-btn.warn{background:var(--red);color:#fff}
+.complete{text-align:center;padding:50px 20px}.complete .icon{font-size:60px}.complete h2{font-size:20px;margin:10px 0}
+.complete .rate{font-size:44px;font-weight:700;color:var(--green);margin:8px 0}
+.act-btn{display:block;width:260px;margin:8px auto;padding:14px;border-radius:12px;font-size:16px;font-weight:700;border:none;cursor:pointer;font-family:inherit;color:#fff}
+.act-btn.primary{background:var(--blue)}.act-btn.warn{background:var(--orange)}.act-btn.danger{background:var(--red)}
+.act-btn.secondary{background:var(--card);color:var(--text);border:1px solid var(--sep)}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 22px;border-radius:20px;font-size:14px;font-weight:700;color:#fff;z-index:200;pointer-events:none;animation:fadeIn .3s;background:var(--green);white-space:nowrap}.toast.err{background:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}}
+.loading{text-align:center;padding:80px 20px;color:var(--text2)}.spinner{width:32px;height:32px;border:3px solid var(--sep);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wrong-badge{background:var(--red);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:4px}
+</style></head><body>
+<div class="header"><h1>📱 全媒体运营师刷题</h1><div class="sub">流量运营 · 三级理论知识</div></div>
+<div class="stats">
+  <span id="progText">第 1/1625 题</span><div class="progress-bar"><div class="fill" id="progFill" style="width:0%"></div></div>
+  <span class="score" id="scoreText">0%</span><span class="wrong" id="wrongText"></span>
+  <button class="tool-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀</button>
+  <button class="tool-btn" id="homeBtn" onclick="renderDashboard()">🏠</button>
+  <button class="tool-btn" id="wrongBtn" onclick="openWrongBook()">📋<span class="wrong-badge" id="wrongBadge">0</span></button>
+</div>
+<div id="app"></div><div id="toast" class="toast hidden"></div>
+
+<script>
+var bank=null,questions=[],qIdx=0,correct=0,wrong=0,answered=false,shuffle=false,mode='all',wrongBook=[],inReview=false,sessionWrong=[],multiSel=new Set();
+
+function init(){
+  var s=document.createElement('script');s.src='quanmeiti_bank.js';s.onload=function(){
+    bank=window.QUIZ_BANK||questionBank;
+    wrongBook=JSON.parse(localStorage.wrongBook||'[]');updateBadge();renderDashboard();
+  };s.onerror=function(){app.innerHTML='<div class="loading"><p>题库加载失败</p></div>'};document.head.appendChild(s);
+}
+
+function getCount(m){return{all:1625,judge:485,single:650,multi:490}[m]||1625}
+
+function renderDashboard(){
+  inReview=false;clearSession();
+  var ms=[{k:'all',i:'📚',t:'全部',c:'#1677FF'},{k:'judge',i:'📝',t:'判断题',c:'#52C41A'},{k:'single',i:'📋',t:'单选题',c:'#FA8C16'},{k:'multi',i:'📑',t:'多选题',c:'#722ED1'}];
+  var h='<div class="card" style="text-align:center"><h2 style="margin-bottom:4px">📊 刷题进度</h2></div>';
+  ms.forEach(function(m){
+    var p=loadProg(m.k),total=getCount(m.k),done=p.c+p.w,pct=Math.round(done/total*100),rate=done?Math.round(p.c/done*100):0;
+    h+='<div class="dash-row"><div class="dash-header"><span class="dash-title">'+m.i+' '+m.t+'</span><span class="dash-stat">'+(done?'正确 <b style="color:var(--green)">'+p.c+'</b> · 错误 <b style="color:var(--red)">'+p.w+'</b> · '+rate+'%':'未开始')+'</span></div><div class="dash-bar"><div class="dash-bar-fill" style="width:'+pct+'%;background:'+m.c+'"></div></div><div class="dash-actions">';
+    h+='<button class="dash-btn primary" onclick="startMode(\''+m.k+'\')">▶ '+(done&&done<total?'继续('+done+'/'+total+')':'开始')+'</button>';
+    if(done) h+='<button class="dash-btn secondary" onclick="resetMode(\''+m.k+'\')">🆕 重刷</button>';
+    h+='</div></div>';
+  });
+  var wb=wrongBook.length;
+  h+='<div class="dash-row" style="text-align:center">'+(wb?'<span style="font-size:15px;font-weight:700">📋 错题本: <b style="color:var(--red)">'+wb+'</b> 题</span><div class="dash-actions" style="justify-content:center;margin-top:6px"><button class="dash-btn warn" onclick="openWrongBook()">复习错题</button></div>':'<span style="font-size:15px;color:var(--text2)">📋 错题本为空</span>')+'</div>';
+  app.innerHTML=h;
+}
+
+function loadProg(m){try{var d=JSON.parse(localStorage.progress||'{}');return d[m]||{i:0,c:0,w:0}}catch(e){return{i:0,c:0,w:0}}}
+function saveProg(m,i,c,w){if(inReview)return;var d=JSON.parse(localStorage.progress||'{}');d[m]={i:i,c:c,w:w};localStorage.progress=JSON.stringify(d)}
+function clearSession(){try{localStorage.removeItem('quizSession')}catch(e){}}
+
+function resetMode(m){if(confirm('确定重置「'+(m==='all'?'全部':m==='judge'?'判断':m==='single'?'单选':'多选')+'」的进度？')){var d=JSON.parse(localStorage.progress||'{}');d[m]={i:0,c:0,w:0};localStorage.progress=JSON.stringify(d);renderDashboard()}}
+
+function startMode(m){
+  mode=m;shuffle=false;document.getElementById('shuffleBtn').classList.remove('on');
+  questions=bank.questions.slice();if(m!=='all') questions=questions.filter(function(q){return q.type===m});
+  var p=loadProg(m);qIdx=p.i;correct=p.c;wrong=p.w;sessionWrong=[];answered=false;multiSel.clear();inReview=false;
+  updateStats();renderQ();window.scrollTo(0,0);
+}
+
+function toggleShuffle(){shuffle=!shuffle;document.getElementById('shuffleBtn').classList.toggle('on',shuffle);startMode(mode);}
+
+function renderQ(){
+  if(qIdx>=questions.length){renderComplete();return}
+  var q=questions[qIdx];answered=false;multiSel.clear();updateStats();
+  var h='';
+  if(q.type==='judge'){
+    h='<div class="card"><span class="badge badge-judge">判断题</span><span class="q-num">第 '+q.number+' 题</span><span class="q-text">'+q.question+'</span><div class="judge-btns"><button class="judge-btn judge-true" onclick="ansJudge(\'正确\',this)">✓ 正确</button><button class="judge-btn judge-false" onclick="ansJudge(\'错误\',this)">✗ 错误</button></div><div id="exp"></div></div>';
+  }else if(q.type==='single'){
+    var o='';q.options.forEach(function(opt){o+='<button class="opt-btn" onclick="ansSingle(\''+opt.label+'\',this)"><span class="opt-label">'+opt.label+'</span><span class="opt-text">'+opt.text+'</span></button>'});
+    h='<div class="card"><span class="badge badge-single">单选题</span><span class="q-num">第 '+q.number+' 题</span><span class="q-text">'+q.question+'</span><div class="options">'+o+'</div><div id="exp"></div></div>';
+  }else{
+    var o='';q.options.forEach(function(opt){o+='<button class="opt-btn" onclick="togMulti(this)" data-label="'+opt.label+'"><span class="opt-label">'+opt.label+'</span><span class="opt-text">'+opt.text+'</span></button>'});
+    h='<div class="card"><span class="badge badge-multi">多选题</span><span class="q-num">第 '+q.number+' 题</span><span class="q-text">'+q.question+'</span><div class="options">'+o+'</div><button class="submit-btn" id="multiSub" onclick="subMulti()" disabled>请选择答案</button><div id="exp"></div></div>';
+  }
+  app.innerHTML=h;
+}
+
+function updateStats(){
+  var t=questions.length,d=correct+wrong;
+  document.getElementById('progText').textContent=t?'第 '+Math.min(d+1,t)+'/'+t+' 题':'0/0';
+  document.getElementById('progFill').style.width=t?Math.min(d/t*100,100)+'%':'0%';
+  document.getElementById('scoreText').textContent=d?Math.round(correct/d*100)+'%':'0%';
+  document.getElementById('wrongText').textContent=wrong?'错'+wrong:'';
+}
+
+function ansJudge(ua,btn){
+  if(answered)return;answered=true;
+  var q=questions[qIdx],ca=q.answer==='√'?'正确':'错误',ok=ua===ca;
+  document.querySelectorAll('.judge-btn').forEach(function(b){b.style.pointerEvents='none';if(b.textContent.includes(ca))b.classList.add('highlight');if(b===btn&&!ok)b.classList.add('faded')});
+  ok?onCorrect(q):onWrong(q,ca);
+}
+
+function ansSingle(la,btn){
+  if(answered)return;answered=true;
+  var q=questions[qIdx],ok=la===q.answer;
+  document.querySelectorAll('.opt-btn').forEach(function(b){b.style.pointerEvents='none';if(b.dataset.label===q.answer)b.classList.add('reveal')});
+  if(ok){btn.classList.add('correct');onCorrect(q)}else{btn.classList.add('wrong');onWrong(q,q.answer)}
+}
+
+function togMulti(btn){if(answered)return;var l=btn.dataset.label;if(multiSel.has(l)){multiSel.delete(l);btn.classList.remove('selected')}else{multiSel.add(l);btn.classList.add('selected')}var s=document.getElementById('multiSub');s.disabled=multiSel.size===0;s.textContent=multiSel.size?'确认提交('+multiSel.size+'项)':'请选择答案'}
+
+function subMulti(){
+  if(answered||multiSel.size===0)return;answered=true;
+  var q=questions[qIdx],ua=Array.from(multiSel).sort().join(''),ok=ua===q.answer;
+  document.querySelectorAll('.opt-btn').forEach(function(b){b.style.pointerEvents='none';if(q.answer.includes(b.dataset.label))b.classList.add('reveal');if(multiSel.has(b.dataset.label)&&!q.answer.includes(b.dataset.label))b.classList.add('wrong')});
+  document.getElementById('multiSub').disabled=true;
+  ok?onCorrect(q):onWrong(q,q.answer);
+}
+
+function onCorrect(q){correct++;rmWrongBook(q.id);updateStats();saveProg(mode,qIdx,correct,wrong);showToast('✓ 正确');setTimeout(function(){qIdx++;renderQ();window.scrollTo(0,0)},600)}
+function onWrong(q,ca){
+  wrong++;sessionWrong.push(q.id);addWrongBook(q.id);updateStats();saveProg(mode,qIdx,correct,wrong);showToast('✗ 错误',true);
+  var ad=ca;if(q.type==='single'){var o=q.options.find(function(o){return o.label===ca});if(o)ad=ca+'. '+o.text}else if(q.type==='multi'){ad=ca.split('').map(function(l){var o=q.options.find(function(o){return o.label===l});return l+(o?'. '+o.text:'')}).join('；')}
+  document.getElementById('exp').innerHTML='<div class="explanation"><div class="exp-label">📖 解析</div><div class="exp-answer">✅ 正确答案：'+ad+'</div><div>'+q.explanation+'</div><button class="next-btn" onclick="goNext()">下一题 →</button></div>';
+  document.getElementById('exp').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function goNext(){qIdx++;renderQ();window.scrollTo(0,0)}
+
+var toastTimer;function showToast(m,e){var t=document.getElementById('toast');t.textContent=m;t.className='toast'+(e?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.add('hidden')},1200)}
+
+function addWrongBook(id){if(!wrongBook.includes(id)){wrongBook.push(id);localStorage.wrongBook=JSON.stringify(wrongBook);updateBadge()}}
+function rmWrongBook(id){var i=wrongBook.indexOf(id);if(i>=0){wrongBook.splice(i,1);localStorage.wrongBook=JSON.stringify(wrongBook);updateBadge()}}
+function updateBadge(){var c=wrongBook.length;document.getElementById('wrongBadge').textContent=c}
+
+function openWrongBook(){
+  if(!wrongBook.length){showToast('错题本为空 🎉');return}
+  inReview=true;questions=bank.questions.filter(function(q){return wrongBook.includes(q.id)});qIdx=0;correct=0;wrong=0;sessionWrong=[];answered=false;multiSel.clear();
+  updateStats();renderQ();window.scrollTo(0,0);
+}
+
+function renderComplete(){
+  var t=questions.length,rate=t?Math.round(correct/t*100):0,e='🎉';if(rate>=90)e='🏆';else if(rate>=70)e='👍';else if(rate<50)e='💪';
+  var sw=sessionWrong.length,wb=wrongBook.length,acts='<button class="act-btn primary" onclick="restart()">🔄 重新开始</button>';
+  if(sw)acts+='<button class="act-btn warn" onclick="reviewWrong()">🔍 复习本轮错题('+sw+')</button>';
+  if(wb)acts+='<button class="act-btn danger" onclick="openWrongBook()">📋 错题本('+wb+')</button>';
+  acts+='<button class="act-btn secondary" onclick="renderDashboard()">🏠 返回首页</button>';
+  app.innerHTML='<div class="complete"><div class="icon">'+e+'</div><h2>本轮完成</h2><p>正确: <b>'+correct+'</b> 题 | 错误: <b>'+wrong+'</b> 题</p><div class="rate">'+rate+'%</div><p style="font-size:13px;color:var(--text2)">错题本累计: '+wb+' 题</p>'+acts+'</div>';
+  if(!inReview){var d=JSON.parse(localStorage.progress||'{}');d[mode]={i:0,c:0,w:0};localStorage.progress=JSON.stringify(d)}
+}
+function reviewWrong(){inReview=true;questions=bank.questions.filter(function(q){return sessionWrong.includes(q.id)});qIdx=0;correct=0;wrong=0;sessionWrong=[];answered=false;multiSel.clear();renderQ();window.scrollTo(0,0)}
+function restart(){questions=bank.questions.slice();if(mode!=='all')questions=questions.filter(function(q){return q.type===mode});qIdx=0;correct=0;wrong=0;sessionWrong=[];answered=false;multiSel.clear();inReview=false;renderQ();window.scrollTo(0,0)}
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+init();
+</script></body></html>
