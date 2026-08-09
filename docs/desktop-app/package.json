@@ -1,0 +1,11 @@
+{
+  "name": "quanmeiti-quiz-desktop",
+  "version": "1.0.0",
+  "description": "全媒体运营师（流量运营）三级理论知识刷题工具 - 桌面版",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {}
+}
