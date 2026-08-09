@@ -1,0 +1,37 @@
+<!-- 裁剪页：Canvas 手势交互 -->
+<view class="crop-container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">
+    <view class="spinner"></view>
+    <text>加载图片中…</text>
+  </view>
+
+  <!-- Canvas 区域 -->
+  <view class="canvas-wrap" wx:if="{{!loading}}">
+    <canvas
+      type="2d"
+      id="cropCanvas"
+      class="crop-canvas"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+    ></canvas>
+
+    <!-- 操作提示 -->
+    <view class="crop-hint">
+      <text>👆 拖动移动位置 · 双指缩放</text>
+    </view>
+  </view>
+
+  <!-- 底部工具栏 -->
+  <view class="bottom-bar safe-bottom" wx:if="{{!loading}}">
+    <view class="info-text">
+      <text>{{template.name}}</text>
+      <text class="info-detail">{{template.mmW}}×{{template.mmH}}mm · {{template.pxW}}×{{template.pxH}}px</text>
+    </view>
+    <view class="bar-actions">
+      <button class="btn-back" bindtap="onBack">← 重选</button>
+      <button class="btn-confirm" bindtap="onConfirm">✓ 确认裁剪</button>
+    </view>
+  </view>
+</view>

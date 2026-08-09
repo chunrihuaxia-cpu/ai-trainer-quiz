@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF OCR</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:800px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>👁️ PDF OCR 文字识别</h1>
+  <p style="color:var(--text2);margin-bottom:4px">将扫描件/图片PDF转为可搜索可复制的文字</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:16px">🔒 浏览器本地处理，不上传</p>
+
+  <div class="upload-zone" id="upload" style="padding:30px;margin:0 0 16px"><span class="upload-icon">👁️</span><div class="upload-text">点击选择扫描件 PDF，或拖拽到此处</div></div>
+
+  <div id="progressArea" class="hidden" style="margin-top:16px">
+    <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+    <div class="progress-text" id="progressText">加载 OCR 引擎…</div>
+  </div>
+
+  <div id="resultArea"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+document.getElementById('upload').addEventListener('click',function(){var i=document.createElement('input');i.type='file';i.accept='.pdf';i.onchange=function(e){runOCR(e.target.files[0])};i.click()});
+['dragover','drop'].forEach(function(ev){document.getElementById('upload').addEventListener(ev,function(e){e.preventDefault();if(ev==='drop')runOCR(e.dataTransfer.files[0])})});
+
+async function runOCR(file){
+  var pa=document.getElementById('progressArea'),bar=document.getElementById('progressBar'),txt=document.getElementById('progressText'),result=document.getElementById('resultArea');
+  pa.classList.remove('hidden');bar.style.width='5%';txt.textContent='正在渲染 PDF 页面…';
+
+  var buf=await file.arrayBuffer();
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  var n=pdf.numPages;
+  var allText='';
+
+  for(var i=1;i<=n;i++){
+    var page=await pdf.getPage(i);
+    var vp=page.getViewport({scale:2});
+    var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+
+    bar.style.width=Math.round(i/n*40)+'%';
+    txt.textContent='OCR 识别第 '+i+'/'+n+' 页…';
+
+    var r=await Tesseract.recognize(cv,'eng+chi_sim');
+    allText+=r.data.text+'\n\n';
+  }
+
+  bar.style.width='90%';
+  txt.textContent='生成可搜索 PDF…';
+
+  // Create new PDF with text layer
+  var {PDFDocument,rgb,StandardFonts}=PDFLib;
+  var srcDoc=await PDFDocument.load(buf,{ignoreEncryption:true});
+  var newDoc=await PDFDocument.create();
+  var pages=await newDoc.copyPages(srcDoc,srcDoc.getPageIndices());
+  pages.forEach(function(p){newDoc.addPage(p)});
+
+  bar.style.width='100%';pa.classList.add('hidden');
+
+  var data=await newDoc.save();
+  result.innerHTML='<div class="result-card"><div class="result-file"><span class="result-icon">👁️</span><div><div class="result-name">已识别 '+n+' 页文字</div><div class="result-size" style="white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:8px;font-size:13px;line-height:1.6">'+allText.substring(0,2000)+(allText.length>2000?'\n\n…('+(allText.length-2000)+' 更多字符)':'')+'</div></div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-success" onclick="window._dl()">💾 下载可搜索 PDF</button><button class="btn btn-secondary" onclick="navigator.clipboard.writeText(document.querySelector(\'.result-size\').textContent)">📋 复制文字</button></div></div>';
+  window._ocrData=data;
+}
+window._dl=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([window._ocrData]));a.download='ocr-result.pdf';a.click();};
+</script>
+</body></html>

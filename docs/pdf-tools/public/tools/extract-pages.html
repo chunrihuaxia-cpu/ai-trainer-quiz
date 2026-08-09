@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF提取页面</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1>📋 提取 PDF 页面</h1>
+  <p style="color:var(--text2);margin-bottom:4px">选择页面提取为新的 PDF</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理，不上传</p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">📋</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="preview" class="hidden" style="margin-top:16px">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="pageList"></div>
+    <button class="btn btn-primary" onclick="window._extract()">📋 提取选中页面</button>
+  </div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+let srcDoc=null,selected=new Set();
+
+initUploadZone('upload',async([file])=>{
+  const { PDFDocument }=PDFLib;
+  srcDoc=await PDFDocument.load(await file.arrayBuffer(),{ignoreEncryption:true});
+  document.getElementById('preview').classList.remove('hidden');
+  document.getElementById('upload').style.opacity='0.5';
+  let html='';
+  for(let i=0;i<srcDoc.getPageCount();i++){
+    html+=`<div id="ep${i}" style="text-align:center;cursor:pointer;padding:8px 14px;border:2px solid var(--border);border-radius:8px;min-width:60px" onclick="window._tog(${i})">
+      <div style="font-size:24px">📄</div><div style="font-size:12px">第${i+1}页</div></div>`;
+  }
+  document.getElementById('pageList').innerHTML=html;
+});
+window._tog=(i)=>{
+  if(selected.has(i)){selected.delete(i);document.getElementById('ep'+i).style.borderColor='var(--border)';document.getElementById('ep'+i).style.background='';}
+  else{selected.add(i);document.getElementById('ep'+i).style.borderColor='var(--primary)';document.getElementById('ep'+i).style.background='var(--blue-light)';}
+};
+window._extract=async()=>{
+  if(!selected.size){alert('请选择至少一页');return;}
+  const { PDFDocument }=PDFLib;
+  const out=await PDFDocument.create();
+  const pages=await out.copyPages(srcDoc,[...selected].sort((a,b)=>a-b));
+  pages.forEach(p=>out.addPage(p));
+  const data=await out.save();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='extracted.pdf';a.click();
+};
+</script>
+</body></html>

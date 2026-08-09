@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🐱 Lottie 桌面宠物</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;overflow:hidden;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)}
+
+/* ── 宠物容器 ── */
+.pet{
+  position:fixed;z-index:2147483647;
+  width:150px;height:150px;
+  cursor:grab;
+  user-select:none;
+  transition:transform .35s cubic-bezier(.25,.8,.25,1.2),filter .2s;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.25));
+}
+.pet:hover{transform:scale(1.12)}
+.pet:active{cursor:grabbing;transform:scale(1.08);filter:drop-shadow(0 6px 18px rgba(0,0,0,.3))}
+.pet.dragging{transition:none;transform:scale(1.08)}
+
+/* ── 阴影 ── */
+.pet-shadow{
+  position:fixed;z-index:2147483646;pointer-events:none;
+  width:100px;height:18px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.2),transparent);
+  border-radius:50%;transition:left .1s,top .1s;
+}
+
+/* ── 提示 ── */
+.hint{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.8);font-size:14px;z-index:2147483648;
+  pointer-events:none;opacity:0;transition:opacity .4s;
+  font-family:-apple-system,sans-serif;
+}
+.hint.show{opacity:1}
+</style></head><body>
+
+<div class="pet-shadow" id="shadow"></div>
+<div class="pet" id="pet"></div>
+<div class="hint" id="hint">🐱 可以拖着我走哦 · 悬停我会变大</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<script>
+var pet={el:null,shadow:null,anim:null,x:0,y:0};
+
+(function init(){
+  pet.el=document.getElementById('pet');
+  pet.shadow=document.getElementById('shadow');
+
+  // 右下角初始位置
+  pet.x=window.innerWidth-180; pet.y=window.innerHeight-180;
+  syncPos();
+
+  // 加载 Lottie 动画
+  pet.anim=lottie.loadAnimation({
+    container:pet.el,
+    renderer:'svg',
+    loop:true,
+    autoplay:true,
+    path:'https://assets5.lottiefiles.com/packages/lf20_cat.json'
+  });
+
+  // 加载失败时用 emoji 回退
+  pet.anim.addEventListener('data_failed',function(){
+    pet.el.innerHTML='<div style="font-size:100px;text-align:center;line-height:150px">🐱</div>';
+  });
+
+  // ── 拖拽 ──
+  var drag=false,px,py;
+  pet.el.addEventListener('mousedown',function(e){
+    e.preventDefault();drag=true;
+    px=e.clientX-pet.x;py=e.clientY-pet.y;
+    pet.el.classList.add('dragging');
+  });
+  pet.el.addEventListener('touchstart',function(e){
+    e.preventDefault();drag=true;
+    var t=e.touches[0];px=t.clientX-pet.x;py=t.clientY-pet.y;
+    pet.el.classList.add('dragging');
+  },{passive:false});
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;pet.x=e.clientX-px;pet.y=e.clientY-py;syncPos();
+  });
+  document.addEventListener('touchmove',function(e){
+    if(!drag)return;var t=e.touches[0];pet.x=t.clientX-px;pet.y=t.clientY-py;syncPos();
+  },{passive:false});
+  document.addEventListener('mouseup',function(){drag=false;pet.el.classList.remove('dragging')});
+  document.addEventListener('touchend',function(){drag=false;pet.el.classList.remove('dragging')});
+
+  // ── 窗口边界 ──
+  window.addEventListener('resize',function(){
+    pet.x=Math.min(pet.x,window.innerWidth-150);
+    pet.y=Math.min(pet.y,window.innerHeight-150);
+    syncPos();
+  });
+
+  // ── 提示 ──
+  var h=document.getElementById('hint');h.classList.add('show');
+  setTimeout(function(){h.classList.remove('show')},5000);
+})();
+
+function syncPos(){
+  pet.el.style.left=pet.x+'px';pet.el.style.top=pet.y+'px';
+  pet.shadow.style.left=(pet.x+25)+'px';pet.shadow.style.top=(pet.y+140)+'px';
+}
+</script></body></html>

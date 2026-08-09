@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>AI PDF问答</title><link rel="stylesheet" href="/css/style.css">
+<style>.chat-msg{padding:12px 16px;border-radius:12px;margin:8px 0;max-width:90%;line-height:1.7;font-size:14px}
+.chat-q{background:var(--blue-light);margin-left:auto;text-align:right}.chat-a{background:var(--bg);white-space:pre-wrap}
+.ai-result{background:var(--card);border-radius:var(--radius);padding:20px;margin-top:16px;line-height:1.8;white-space:pre-wrap;font-size:15px;box-shadow:var(--shadow)}
+</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:800px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>💬 AI 问答 PDF</h1>
+  <p style="color:var(--text2);margin-bottom:4px">上传 PDF，然后向 AI 提问关于文档内容的问题</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:16px">🔒 PDF 在浏览器提取文字，不上传。仅文本发给 AI。</p>
+
+  <div class="upload-zone" id="upload" style="padding:30px"><span class="upload-icon">💬</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+
+  <div id="chatArea" class="hidden" style="margin-top:16px">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="question" style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit" placeholder="输入你的问题...">
+      <button class="btn btn-primary" onclick="window._ask()" id="askBtn">提问</button>
+    </div>
+    <div id="chatHistory"></div>
+  </div>
+</div>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+let pdfText='';
+initUploadZone('upload',async([file])=>{
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let t='';for(let i=1;i<=pdf.numPages;i++){const p=await pdf.getPage(i);const c=await p.getTextContent();t+=c.items.map(it=>it.str).join(' ')+'\n';}
+  pdfText=t;
+  document.getElementById('chatArea').classList.remove('hidden');
+  document.getElementById('upload').style.opacity='0.5';
+  document.getElementById('chatHistory').innerHTML='<div style="font-size:13px;color:var(--text2);text-align:center">✅ PDF 已加载，共提取 '+Math.round(t.length/1000)+'K 字符。请输入问题。</div>';
+},{multiple:false,accept:'.pdf'});
+
+window._ask=async()=>{
+  const q=document.getElementById('question').value.trim();if(!q)return;
+  const hist=document.getElementById('chatHistory');
+  hist.innerHTML+=`<div class="chat-msg chat-q">${q}</div><div class="chat-msg chat-a">🤔 思考中...</div>`;
+  document.getElementById('question').value='';document.getElementById('askBtn').disabled=true;
+  try{
+    const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:pdfText,mode:'ask',question:q})});
+    const d=await r.json();
+    hist.lastChild.textContent=d.error?`❌ ${d.error}`:d.result;
+  }catch(e){hist.lastChild.textContent='❌ 请求失败';}
+  document.getElementById('askBtn').disabled=false;
+  document.getElementById('question').focus();
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs" type="module"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';</script>
+</body></html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF删除页面</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1>🗑️ 删除 PDF 页面</h1>
+  <p style="color:var(--text2);margin-bottom:4px">选择要删除的页面</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 文件在浏览器本地处理，不上传服务器</p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">🗑️</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="preview" class="hidden" style="margin-top:16px">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="pageList"></div>
+    <button class="btn btn-danger" onclick="window._del()">🗑️ 删除选中页面并下载</button>
+  </div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+let srcDoc=null,srcBytes=null,toDel=new Set();
+
+initUploadZone('upload',async([file])=>{
+  const { PDFDocument }=PDFLib;
+  srcBytes=await file.arrayBuffer();
+  srcDoc=await PDFDocument.load(srcBytes,{ignoreEncryption:true});
+  const n=srcDoc.getPageCount();
+  document.getElementById('preview').classList.remove('hidden');
+  document.getElementById('upload').style.opacity='0.5';
+  let html='';
+  for(let i=0;i<n;i++){
+    toDel.delete(i);
+    html+=`<div id="pg${i}" style="text-align:center;cursor:pointer;padding:8px 14px;border:2px solid var(--border);border-radius:8px;min-width:60px" onclick="window._tog(${i})">
+      <div style="font-size:24px">📄</div><div style="font-size:12px">第${i+1}页</div></div>`;
+  }
+  document.getElementById('pageList').innerHTML=html;
+});
+window._tog=(i)=>{
+  if(toDel.has(i)){toDel.delete(i);document.getElementById('pg'+i).style.borderColor='var(--border)';document.getElementById('pg'+i).style.background='';}
+  else{toDel.add(i);document.getElementById('pg'+i).style.borderColor='var(--red)';document.getElementById('pg'+i).style.background='var(--red-bg)';}
+};
+window._del=async()=>{
+  const { PDFDocument }=PDFLib;
+  const out=await PDFDocument.create();
+  const keep=srcDoc.getPageIndices().filter(i=>!toDel.has(i));
+  if(!keep.length){alert('至少保留一页');return;}
+  const pages=await out.copyPages(srcDoc,keep);
+  pages.forEach(p=>out.addPage(p));
+  const data=await out.save();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='deleted.pdf';a.click();
+};
+</script>
+</body></html>

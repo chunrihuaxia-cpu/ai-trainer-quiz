@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF添加页码</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1>🔢 添加页码</h1>
+  <p style="color:var(--text2);margin-bottom:4px">给 PDF 页面添加页码编号</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理，不上传</p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">🔢</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="config" class="hidden card" style="margin:16px auto;max-width:500px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">起始页码</label>
+    <input id="startNum" type="number" value="1" min="1" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">位置</label>
+    <select id="pos" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:16px">
+      <option value="bottom-center">底部居中</option><option value="bottom-right">底部右侧</option><option value="top-center">顶部居中</option>
+    </select>
+    <button class="btn btn-primary" onclick="window._apply()">🔢 添加页码并下载</button>
+  </div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+let srcDoc=null;
+initUploadZone('upload',async([file])=>{
+  const { PDFDocument }=PDFLib;
+  srcDoc=await PDFDocument.load(await file.arrayBuffer(),{ignoreEncryption:true});
+  document.getElementById('config').classList.remove('hidden');
+  document.getElementById('upload').style.opacity='0.5';
+});
+window._apply=async()=>{
+  const { rgb,StandardFonts }=PDFLib;
+  const start=parseInt(document.getElementById('startNum').value)||1;
+  const pos=document.getElementById('pos').value;
+  const font=await srcDoc.embedFont(StandardFonts.Helvetica);
+  const pages=srcDoc.getPages();
+  pages.forEach((p,i)=>{
+    const {width,height}=p.getSize();
+    const num=(start+i).toString();
+    const txtW=font.widthOfTextAtSize(num,10);
+    let x,y;
+    if(pos==='bottom-center'){x=width/2-txtW/2;y=30;}
+    else if(pos==='bottom-right'){x=width-50;y=30;}
+    else{x=width/2-txtW/2;y=height-20;}
+    p.drawText(num,{x,y,size:10,font,color:rgb(0,0,0)});
+  });
+  const data=await srcDoc.save();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='numbered.pdf';a.click();
+};
+</script>
+</body></html>

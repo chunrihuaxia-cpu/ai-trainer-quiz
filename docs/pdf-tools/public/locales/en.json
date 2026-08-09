@@ -1,0 +1,31 @@
+{
+  "title": "Free PDF Tools - Secure, No Registration",
+  "subtitle": "All processing happens in your browser. Files never leave your device.",
+  "tools": {
+    "compress": {"name":"Compress PDF","desc":"Reduce PDF file size with optimized quality"},
+    "merge": {"name":"Merge PDF","desc":"Combine multiple PDFs into one file"},
+    "split": {"name":"Split PDF","desc":"Split PDF by pages or ranges"},
+    "to-word": {"name":"PDF to Word","desc":"Convert PDF to editable Word document"},
+    "to-image": {"name":"PDF to Image","desc":"Convert PDF pages to JPG/PNG images"}
+  },
+  "nav": {"home":"Home","pricing":"Pricing","lang":"中文","login":"Login","logout":"Logout"},
+  "upload": {"drop":"Click to select, or drop PDF files here","or":"Supports","browse":"Click to upload","max":"Max 100MB"},
+  "actions": {"download":"Download","clear":"Clear","processing":"Processing…","done":"Done!"},
+  "footer": "© 2026 PDFTool - Your files stay on your device. We never see them.",
+  "pricing": {
+    "title":"Choose Your Plan",
+    "free":"Free",
+    "freePrice":"$0",
+    "pro":"Pro",
+    "proPrice":"$7/mo",
+    "enterprise":"Enterprise",
+    "enterprisePrice":"$19/mo",
+    "perMonth":"/mo",
+    "freeDesc":["2/day","Up to 10MB","Basic compression","Watermark"],
+    "proDesc":["Unlimited","Up to 100MB","Advanced compression","No watermark","All tools","Priority support"],
+    "enterpriseDesc":["Unlimited","Up to 500MB","Batch processing","API access","Everything unlimited"],
+    "cta":"Get Started",
+    "payWechat":"WeChat Pay",
+    "payAlipay":"Alipay"
+  }
+}

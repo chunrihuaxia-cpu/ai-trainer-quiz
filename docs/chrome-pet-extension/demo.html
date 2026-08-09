@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Screen Buddy — 宠物预览</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;font-family:-apple-system,sans-serif;color:#fff;padding:40px 20px}
+h1{text-align:center;font-size:36px;margin-bottom:8px}
+.sub{text-align:center;opacity:.8;margin-bottom:40px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px;max-width:900px;margin:0 auto}
+.card{background:rgba(255,255,255,.12);border-radius:20px;padding:24px 16px;text-align:center;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);transition:.3s;cursor:pointer}
+.card:hover{transform:translateY(-4px);background:rgba(255,255,255,.2);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.card .emoji{font-size:72px;display:block;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+.card .name{font-size:18px;font-weight:700;margin-bottom:4px}
+.card .tag{font-size:11px;padding:3px 10px;border-radius:12px;display:inline-block;font-weight:600}
+.tag-free{background:rgba(82,196,26,.3);color:#a0ff80}
+.tag-pro{background:rgba(250,140,22,.3);color:#ffc069}
+.card .desc{font-size:12px;opacity:.7;margin-top:8px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.card:nth-child(2) .emoji{animation-delay:.3s}
+.card:nth-child(3) .emoji{animation-delay:.6s}
+.card:nth-child(4) .emoji{animation-delay:.9s}
+.card:nth-child(5) .emoji{animation-delay:1.2s}
+.card:nth-child(6) .emoji{animation-delay:1.5s}
+.card:nth-child(7) .emoji{animation-delay:1.8s}
+.card:nth-child(8) .emoji{animation-delay:2.1s}
+.card:nth-child(9) .emoji{animation-delay:2.4s}
+</style></head><body>
+<h1>🐾 Screen Buddy</h1>
+<div class="sub">9 种可爱宠物 · 3 种免费 · 6 种 Pro</div>
+<div class="grid" id="grid"></div>
+<script>
+var pets=[
+  {emoji:'🐱',name:'猫咪',free:true,desc:'独立优雅，偶尔撒娇'},
+  {emoji:'🐶',name:'小狗',free:true,desc:'忠诚活泼，随叫随到'},
+  {emoji:'🐸',name:'青蛙',free:true,desc:'呆萌跳跳，呱呱叫'},
+  {emoji:'🐼',name:'熊猫',premium:true,desc:'憨态可掬，慢悠悠'},
+  {emoji:'🐰',name:'兔子',premium:true,desc:'软萌可爱，蹦蹦跳'},
+  {emoji:'🦊',name:'狐狸',premium:true,desc:'聪明伶俐，小机灵'},
+  {emoji:'🦉',name:'猫头鹰',premium:true,desc:'夜间出没，知识渊博'},
+  {emoji:'🦄',name:'独角兽',premium:true,desc:'梦幻魔法，彩虹特效'},
+  {emoji:'🐲',name:'小龙',premium:true,desc:'喷火小霸王'},
+];
+var g=document.getElementById('grid');
+pets.forEach(function(p){
+  g.innerHTML+='<div class="card"><span class="emoji">'+p.emoji+'</span><span class="name">'+p.name+'</span><span class="tag '+(p.free?'tag-free':'tag-pro')+'">'+(p.free?'免费':'Pro')+'</span><div class="desc">'+p.desc+'</div></div>';
+});
+</script>
+</body></html>

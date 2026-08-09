@@ -1,0 +1,149 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDFTool — 100% Private PDF Tools</title><meta name="description" content="Free online PDF tools. All processing in your browser. Zero upload. Compress, merge, split, edit, convert, AI-powered."><link rel="stylesheet" href="/css/style.css">
+<style>
+.hero{padding:48px 20px 32px;text-align:center;max-width:700px;margin:0 auto}
+.hero h1{font-size:34px;font-weight:800;margin-bottom:8px}
+.hero p{font-size:16px;color:var(--text2)}
+.trust-badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.trust-badge{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.trust-badge.green{background:var(--green-light);color:var(--green)}
+.trust-badge.blue{background:var(--blue-light);color:var(--blue)}
+.trust-badge.purple{background:var(--purple-bg);color:var(--purple)}
+
+/* Search */
+.search-wrap{max-width:500px;margin:0 auto 12px;position:relative}
+.search-wrap input{width:100%;padding:12px 16px 12px 44px;border:2px solid var(--border);border-radius:28px;font-size:15px;font-family:inherit;outline:none;transition:.2s;background:var(--card)}
+.search-wrap input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.search-wrap .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text2);pointer-events:none}
+
+/* Tabs */
+.cat-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.cat-tab{padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:.2s;font-family:inherit}
+.cat-tab.active,.cat-tab:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* Tool grid */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:0 20px 40px;max-width:1100px;margin:0 auto}
+.tool-card{background:var(--card);border-radius:var(--radius);padding:20px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04);border:1.5px solid transparent;transition:.2s;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:6px;cursor:pointer;position:relative}
+.tool-card:hover{border-color:var(--primary);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.tool-card .icon{font-size:28px}
+.tool-card .name{font-size:14px;font-weight:700}
+.tool-card .desc{font-size:12px;color:var(--text2);line-height:1.4}
+.tool-card .badge-new{position:absolute;top:8px;right:8px;background:var(--green);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.tool-card .badge-ai{background:var(--purple)}
+
+/* Category header */
+.cat-header{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:0 20px;margin:16px 0 8px;max-width:1100px;margin-left:auto;margin-right:auto}
+
+@media(max-width:600px){.tools-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 12px 24px}.tool-card{padding:14px 10px}.hero h1{font-size:24px}}
+</style></head><body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a>
+  <div class="nav-links">
+    <a href="/" class="nav-link" style="font-weight:600">工具</a>
+    <a href="/pricing.html" class="nav-link">价格</a>
+    <button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')">EN</button>
+    <a href="/pricing.html" class="nav-link nav-pro">Pro</a>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <h1>Every PDF tool you need.<br>100% private. Zero upload.</h1>
+    <p>All processing happens in your browser. Your files never leave your device — not even to our servers.</p>
+    <div class="trust-badges">
+      <span class="trust-badge green">🔒 客户端处理</span>
+      <span class="trust-badge blue">♾️ 无限免费</span>
+      <span class="trust-badge purple">📱 全平台</span>
+    </div>
+  </section>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜索工具... (如: 压缩、合并、OCR、签名)" oninput="filterTools()">
+  </div>
+
+  <div class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" data-cat="all">全部</button>
+    <button class="cat-tab" data-cat="organize">📑 整理</button>
+    <button class="cat-tab" data-cat="convert">🔄 转换</button>
+    <button class="cat-tab" data-cat="edit">✏️ 编辑</button>
+    <button class="cat-tab" data-cat="ai">🤖 AI</button>
+  </div>
+
+  <div class="tools-grid" id="toolsGrid"></div>
+</main>
+
+<footer class="footer">© 2026 PDFTool — Your files stay on your device. We never see them.</footer>
+
+<script src="/js/i18n.js"></script>
+<script>
+var toolsCount = 19;
+var tools = [
+  // Organize
+  {name:'PDF 压缩',desc:'减小文件大小，优化质量',icon:'🗜️',href:'/tools/compress.html',cat:'organize'},
+  {name:'PDF 合并',desc:'多个 PDF 合并为一个',icon:'📑',href:'/tools/merge.html',cat:'organize'},
+  {name:'PDF 拆分',desc:'按页数或范围拆分',icon:'✂️',href:'/tools/split.html',cat:'organize'},
+  {name:'PDF 旋转',desc:'旋转页面方向',icon:'🔄',href:'/tools/rotate.html',cat:'organize'},
+  {name:'删除页面',desc:'移除不需要的页面',icon:'🗑️',href:'/tools/delete-pages.html',cat:'organize'},
+  {name:'提取页面',desc:'提取指定页为新PDF',icon:'📋',href:'/tools/extract-pages.html',cat:'organize'},
+  {name:'添加页码',desc:'自动页码编号',icon:'🔢',href:'/tools/page-numbers.html',cat:'organize'},
+  {name:'页面排序',desc:'拖拽调整页面顺序',icon:'↔️',href:'/tools/reorder.html',cat:'organize',badge:'新'},
+  {name:'PDF 对比',desc:'对比两个PDF差异',icon:'🔍',href:'/tools/compare.html',cat:'organize'},
+  // Convert
+  {name:'PDF 转 Word',desc:'转换为可编辑文档',icon:'📝',href:'/tools/to-word.html',cat:'convert'},
+  {name:'PDF 转 图片',desc:'页面转为 JPG/PNG',icon:'🖼️',href:'/tools/to-image.html',cat:'convert'},
+  {name:'PDF OCR',desc:'扫描件文字识别',icon:'👁️',href:'/tools/ocr.html',cat:'convert',badge:'新',ai:true},
+  // Edit
+  {name:'文字编辑 🆕',desc:'直接在PDF中修改文字',icon:'✏️',href:'/tools/edit-text.html',cat:'edit',badge:'热门'},
+  {name:'添加水印',desc:'文字水印批量添加',icon:'💧',href:'/tools/watermark.html',cat:'edit'},
+  {name:'PDF 签名',desc:'手写签名插入',icon:'✍️',href:'/tools/sign.html',cat:'edit'},
+  {name:'PDF 加密',desc:'设置打开密码',icon:'🔐',href:'/tools/protect.html',cat:'edit',badge:'新'},
+  // AI
+  {name:'AI 总结 PDF',desc:'AI 自动提取要点',icon:'🤖',href:'/tools/summarize.html',cat:'ai',badge:'AI'},
+  {name:'AI 问答 PDF',desc:'向AI提问文档内容',icon:'💬',href:'/tools/ask-pdf.html',cat:'ai',badge:'AI'},
+];
+
+var currentCat = 'all';
+
+function renderTools(filter) {
+  var grid = document.getElementById('toolsGrid');
+  var search = (filter||'').toLowerCase();
+  var html = '';
+  var shown = tools.filter(function(t){
+    if (currentCat !== 'all' && t.cat !== currentCat) return false;
+    if (search && !t.name.toLowerCase().includes(search) && !t.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  if (!shown.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">没有匹配的工具</div>';
+    return;
+  }
+
+  shown.forEach(function(t){
+    html += '<a href="'+t.href+'" class="tool-card">';
+    if (t.badge) html += '<span class="badge-new'+(t.ai?' badge-ai':'')+'">'+t.badge+'</span>';
+    html += '<span class="icon">'+t.icon+'</span>';
+    html += '<span class="name">'+t.name+'</span>';
+    html += '<span class="desc">'+t.desc+'</span>';
+    html += '</a>';
+  });
+  grid.innerHTML = html;
+}
+
+function filterTools() {
+  renderTools(document.getElementById('searchInput').value);
+}
+
+// Category tabs
+document.getElementById('catTabs').addEventListener('click', function(e){
+  if (!e.target.classList.contains('cat-tab')) return;
+  document.querySelectorAll('.cat-tab').forEach(function(b){b.classList.remove('active')});
+  e.target.classList.add('active');
+  currentCat = e.target.dataset.cat;
+  filterTools();
+});
+
+renderTools();
+</script>
+</body></html>

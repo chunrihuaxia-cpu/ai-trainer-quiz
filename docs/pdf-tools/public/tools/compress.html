@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF压缩</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav">
+  <a href="/" class="nav-brand">PDFTool</a>
+  <div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div>
+</nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1 data-i18n="tools.compress.name" style="margin-bottom:4px"></h1>
+  <p data-i18n="tools.compress.desc" style="color:var(--text2);margin-bottom:24px"></p>
+  <div class="upload-zone" id="upload">
+    <span class="upload-icon">📄</span>
+    <div class="upload-text" data-i18n="upload.drop"></div>
+    <div class="upload-hint" data-i18n="upload.max"></div>
+  </div>
+  <div class="progress-bar hidden" id="progressWrap"><div class="progress-fill" id="progressBar"></div></div>
+  <div id="result"></div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone, formatSize, showToast, downloadBlob } from '/js/common.js';
+window.downloadBlob = downloadBlob;
+
+initUploadZone('upload', async ([file]) => {
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  const result = document.getElementById('result');
+  wrap.classList.remove('hidden');
+  bar.style.width = '10%';
+
+  const { PDFDocument } = PDFLib;
+  bar.style.width = '30%';
+
+  const buf = await file.arrayBuffer();
+  const srcDoc = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const destDoc = await PDFDocument.create();
+
+  bar.style.width = '50%';
+  const pages = await destDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+  pages.forEach(p => destDoc.addPage(p));
+
+  bar.style.width = '80%';
+  // Basic compression: remove unused objects
+  const compressed = await destDoc.save({
+    useObjectStreams: true,
+    addDefaultPage: false,
+  });
+
+  bar.style.width = '100%';
+  setTimeout(() => wrap.classList.add('hidden'), 800);
+
+  const origSize = file.size;
+  const newSize = compressed.byteLength;
+  const ratio = Math.round((1 - newSize/origSize) * 100);
+
+  showToast(I18n._lang==='zh' ? `压缩完成！减小了 ${ratio}%` : `Done! Reduced by ${ratio}%`);
+
+  result.innerHTML = `<div class="result-card">
+    <div class="result-file"><span class="result-icon">📄</span>
+      <div><div class="result-name">${file.name}</div>
+      <div class="result-size">${formatSize(origSize)} → <b style="color:var(--green)">${formatSize(newSize)}</b> (${ratio}%)</div></div>
+    </div>
+    <button class="btn btn-success" style="margin-top:12px" onclick="this.blur();downloadBlob(new Blob([window._compressed]),'${file.name.replace('.pdf','_compressed.pdf')}')">💾 ${I18n._lang==='zh'?'下载压缩文件':'Download'}</button>
+  </div>`;
+  window._compressed = compressed;
+}, { multiple: false, accept: '.pdf' });
+</script>
+</body></html>

@@ -1,0 +1,31 @@
+{
+  "title": "PDF在线工具 - 免费、安全、无需注册",
+  "subtitle": "所有处理在浏览器端完成，文件不上传服务器",
+  "tools": {
+    "compress": {"name":"PDF压缩","desc":"减小PDF文件大小，优化质量"},
+    "merge": {"name":"PDF合并","desc":"将多个PDF合并为一个文件"},
+    "split": {"name":"PDF拆分","desc":"按页数或范围拆分PDF"},
+    "to-word": {"name":"PDF转Word","desc":"将PDF转换为可编辑的Word文档"},
+    "to-image": {"name":"PDF转图片","desc":"将PDF页面转换为JPG/PNG图片"}
+  },
+  "nav": {"home":"首页","pricing":"价格","lang":"English","login":"登录","logout":"退出"},
+  "upload": {"drop":"点击选择文件，或将PDF拖拽到此处","or":"支持","browse":"点击上传","max":"最大100MB"},
+  "actions": {"download":"下载","clear":"清除","processing":"处理中…","done":"完成"},
+  "footer": "© 2026 PDFTool - 您的文件在您的设备上处理，我们从不接触",
+  "pricing": {
+    "title":"选择你的计划",
+    "free":"免费版",
+    "freePrice":"¥0",
+    "pro":"专业版",
+    "proPrice":"¥9.9/月",
+    "enterprise":"企业版",
+    "enterprisePrice":"¥29/月",
+    "perMonth":"/月",
+    "freeDesc":["每天2次","最大10MB","基础压缩","有水印"],
+    "proDesc":["无限使用","最大100MB","高级压缩","无水印","所有工具可用","优先支持"],
+    "enterpriseDesc":["无限使用","最大500MB","批量处理","API接口","无限制所有功能"],
+    "cta":"立即开通",
+    "payWechat":"微信支付",
+    "payAlipay":"支付宝"
+  }
+}

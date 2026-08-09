@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🐊 桌面宠物 · 滑板鳄鱼</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;overflow:hidden;background:linear-gradient(145deg,#0f172a,#1e293b,#334155)}
+
+.pet.walking-right{transform:scaleX(1)}
+.pet.walking-left{transform:scaleX(-1)}
+.pet{
+  position:fixed;z-index:999999;
+  width:320px;height:180px;
+  cursor:grab;user-select:none;
+  -webkit-user-select:none;-webkit-user-drag:none;
+  transition:transform .4s cubic-bezier(.25,.8,.25,1.2),
+             filter .3s ease;
+  filter:drop-shadow(0 6px 20px rgba(0,0,0,.3));
+}
+.pet:hover{transform:scale(1.08);filter:drop-shadow(0 8px 28px rgba(0,0,0,.4))}
+.pet:active{cursor:grabbing}
+.pet.dragging{transition:none;transform:scale(1.1) rotate(5deg);filter:drop-shadow(0 10px 32px rgba(0,0,0,.45))}
+
+.pet svg{width:100%;height:100%}
+
+.pet.bounce{animation:petBounce .55s cubic-bezier(.25,.8,.25,1.3)}
+@keyframes petBounce{
+  0%{transform:scale(1) translateY(0)}
+  25%{transform:scale(1.15) translateY(-24px)}
+  50%{transform:scale(.92) translateY(-6px)}
+  75%{transform:scale(1.04) translateY(-2px)}
+  100%{transform:scale(1) translateY(0)}
+}
+
+.bubble{
+  position:fixed;z-index:1000000;pointer-events:none;
+  background:rgba(0,0,0,.82);color:#fff;
+  padding:8px 18px;border-radius:20px;
+  font-size:14px;font-family:-apple-system,'PingFang SC',sans-serif;
+  white-space:nowrap;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .3s,transform .3s;
+}
+.bubble.show{opacity:1;transform:translateY(0)}
+.bubble::after{
+  content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:6px solid transparent;border-right:6px solid transparent;
+  border-top:6px solid rgba(0,0,0,.82);
+}
+
+.shadow{
+  position:fixed;z-index:999998;pointer-events:none;
+  width:200px;height:20px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.18),transparent);
+  border-radius:50%;transition:left .15s ease,top .15s ease;
+}
+
+.hint{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.55);font-size:13px;z-index:1000001;
+  pointer-events:none;opacity:0;transition:opacity .5s;
+  font-family:-apple-system,sans-serif;
+}
+.hint.show{opacity:1}
+</style></head><body>
+
+<div class="shadow" id="shadow"></div>
+<div class="pet" id="pet"></div>
+<div class="bubble" id="bubble"></div>
+<div class="hint" id="hint">🐊 骑着滑板车的鳄鱼 · 可以拖拽我</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<script src="crocodile_data.js"></script>
+<script>
+var pet={el:null,shadow:null,bubble:null,anim:null,x:0,y:0};
+var drag={active:false,px:0,py:0};
+var walk={active:false,targetX:0,speed:0,timer:null};
+var bubbleTimer=null;
+var messages=['你好呀！🐊','滑板车最快！🛹','不要拽我～','晒太阳中…☀️','今天要去哪？','一起兜风吧！'];
+
+(function init(){
+  pet.el=document.getElementById('pet');
+  pet.shadow=document.getElementById('shadow');
+  pet.bubble=document.getElementById('bubble');
+
+  // 右下角
+  pet.x=window.innerWidth-350;pet.y=window.innerHeight-210;
+  syncPos();
+
+  // 加载 Lottie 动画（内嵌数据，无需网络）
+  pet.anim=lottie.loadAnimation({
+    container:pet.el,
+    renderer:'svg',
+    loop:true,
+    autoplay:true,
+    animationData:CROC_ANIM
+  });
+
+  // ── Drag ──
+  pet.el.addEventListener('mousedown',function(e){
+    e.preventDefault();e.stopPropagation();drag.active=true;
+    var t=e;drag.px=t.clientX-pet.x;drag.py=t.clientY-pet.y;
+    pet.el.classList.add('dragging');
+  });
+  pet.el.addEventListener('touchstart',function(e){
+    e.preventDefault();e.stopPropagation();drag.active=true;
+    var t=e.touches[0];drag.px=t.clientX-pet.x;drag.py=t.clientY-pet.y;
+    pet.el.classList.add('dragging');
+  },{passive:false});
+  document.addEventListener('mousemove',function(e){
+    if(!drag.active)return;pet.x=e.clientX-drag.px;pet.y=e.clientY-drag.py;
+    pet.x=Math.max(0,Math.min(window.innerWidth-320,pet.x));
+    pet.y=Math.max(0,Math.min(window.innerHeight-180,pet.y));
+    syncPos();
+  });
+  document.addEventListener('touchmove',function(e){
+    if(!drag.active)return;
+    var t=e.touches[0];pet.x=t.clientX-drag.px;pet.y=t.clientY-drag.py;
+    pet.x=Math.max(0,Math.min(window.innerWidth-320,pet.x));
+    pet.y=Math.max(0,Math.min(window.innerHeight-180,pet.y));
+    syncPos();
+  },{passive:false});
+  document.addEventListener('mouseup',function(){drag.active=false;pet.el.classList.remove('dragging')});
+  document.addEventListener('touchend',function(){drag.active=false;pet.el.classList.remove('dragging')});
+
+  // ── Click ──
+  pet.el.addEventListener('click',function(e){e.stopPropagation();
+    pet.el.classList.remove('bounce');void pet.el.offsetWidth;pet.el.classList.add('bounce');
+    showBubble(messages[Math.floor(Math.random()*messages.length)]);
+  });
+
+  window.addEventListener('resize',function(){
+    pet.x=Math.min(pet.x,window.innerWidth-320);
+    pet.y=Math.min(pet.y,window.innerHeight-180);
+    syncPos();
+  });
+
+  var h=document.getElementById('hint');
+  h.classList.add('show');
+  setTimeout(function(){h.classList.remove('show')},6000);
+
+  // ── 自动巡逻：屏幕左右来回走 ──
+  startPatrol();
+})();
+
+function startPatrol(){
+  walk.timer=setInterval(function(){
+    if(drag.active||walk.active)return;
+    // 决定方向：当前在右半边 → 往左走，在左半边 → 往右走
+    var mid=window.innerWidth/2;
+    walk.targetX=pet.x>mid?40:window.innerWidth-360;
+    walk.speed=(walk.targetX>pet.x?1:-1)*1.5;
+    walk.active=true;
+
+    // 面向行走方向
+    pet.el.classList.remove('walking-left','walking-right');
+    pet.el.classList.add(walk.speed>0?'walking-right':'walking-left');
+
+    var walkAnim=setInterval(function(){
+      if(drag.active){walk.active=false;clearInterval(walkAnim);return}
+      pet.x+=walk.speed;
+      if((walk.speed>0&&pet.x>=walk.targetX)||(walk.speed<0&&pet.x<=walk.targetX)){
+        pet.x=walk.targetX;walk.active=false;clearInterval(walkAnim);
+        pet.el.classList.remove('walking-left','walking-right');
+      }
+      pet.x=Math.max(0,Math.min(window.innerWidth-320,pet.x));
+      syncPos();
+    },20);
+  },12000+Math.random()*8000);
+}
+
+function syncPos(){pet.el.style.left=pet.x+'px';pet.el.style.top=pet.y+'px';pet.shadow.style.left=(pet.x+90)+'px';pet.shadow.style.top=(pet.y+175)+'px'}
+function showBubble(msg){clearTimeout(bubbleTimer);pet.bubble.textContent=msg;pet.bubble.style.left=(pet.x+160)+'px';pet.bubble.style.top=(pet.y-40)+'px';pet.bubble.classList.add('show');bubbleTimer=setTimeout(function(){pet.bubble.classList.remove('show')},1500)}
+</script></body></html>

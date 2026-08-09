@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF拆分</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool</a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1 data-i18n="tools.split.name"></h1>
+  <p style="color:var(--text2);margin-bottom:24px" data-i18n="tools.split.desc"></p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">✂️</span><div class="upload-text" data-i18n="upload.drop"></div></div>
+  <div id="splitOptions" class="hidden" style="margin-top:16px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:8px" id="splitLabel"></label>
+    <select id="splitMode" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:14px;width:100%;margin-bottom:12px">
+      <option value="all"></option>
+      <option value="range"></option>
+    </select>
+    <div id="rangeInputs" class="hidden split-range"><span id="rFrom"></span><input type="number" id="rangeFrom" min="1" value="1"><span id="rTo"></span><input type="number" id="rangeTo" min="1" value="2"></div>
+    <button class="btn btn-primary" id="splitBtn">✂️ <span id="splitBtnText"></span></button>
+  </div>
+  <div id="result"></div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone, downloadBlob } from '/js/common.js';
+window.downloadBlob = downloadBlob;
+
+let srcFile = null, srcDoc = null;
+
+// Init i18n labels
+setTimeout(() => {
+  const zh = I18n._lang === 'zh';
+  document.getElementById('splitLabel').textContent = zh ? '选择拆分方式' : 'Split mode';
+  document.querySelector('#splitMode option[value=all]').textContent = zh ? '每页单独一个PDF文件' : 'One PDF per page';
+  document.querySelector('#splitMode option[value=range]').textContent = zh ? '按页码范围' : 'By page range';
+  document.getElementById('rFrom').textContent = zh ? '从' : 'From';
+  document.getElementById('rTo').textContent = zh ? '到' : 'to';
+  document.getElementById('splitBtnText').textContent = zh ? '开始拆分' : 'Split PDF';
+}, 200);
+
+function updateRangeVisibility() {
+  const isRange = document.getElementById('splitMode').value === 'range';
+  document.getElementById('rangeInputs').style.display = isRange ? '' : 'none';
+}
+document.getElementById('splitMode').addEventListener('change', updateRangeVisibility);
+updateRangeVisibility();
+
+initUploadZone('upload', async ([file]) => {
+  srcFile = file;
+  const { PDFDocument } = PDFLib;
+  const buf = await file.arrayBuffer();
+  srcDoc = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const n = srcDoc.getPageCount();
+  document.getElementById('rangeTo').max = n;
+  document.getElementById('rangeTo').value = n;
+  document.getElementById('splitOptions').classList.remove('hidden');
+  document.getElementById('upload').style.opacity = '0.5';
+  updateRangeVisibility();
+}, { multiple: false, accept: '.pdf' });
+
+document.getElementById('splitBtn').addEventListener('click', async () => {
+  if (!srcDoc) return;
+  const mode = document.getElementById('splitMode').value;
+  let pages;
+  if (mode === 'all') {
+    pages = srcDoc.getPageIndices().map(i => [i]);
+  } else {
+    const from = parseInt(document.getElementById('rangeFrom').value) - 1;
+    const to = parseInt(document.getElementById('rangeTo').value);
+    pages = [[...Array(to-from)].map((_,i) => from + i)];
+  }
+
+  const result = document.getElementById('result');
+  result.innerHTML = '';
+  for (const indices of pages) {
+    const newDoc = await srcDoc.constructor.create();
+    const copied = await newDoc.copyPages(srcDoc, indices);
+    copied.forEach(p => newDoc.addPage(p));
+    const data = await newDoc.save();
+    const range = indices.length === 1 ? `p${indices[0]+1}` : `p${indices[0]+1}-${indices[indices.length-1]+1}`;
+    const name = srcFile.name.replace('.pdf', `_${range}.pdf`);
+    const blob = new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    result.innerHTML += `<div class="result-card"><div class="result-file"><span class="result-icon">📄</span><div><div class="result-name">${name}</div></div></div><button class="btn btn-success" style="margin-top:8px" onclick="window.downloadBlob(new Blob([window['_data_${range}']]),'${name}')">💾 ${I18n._lang==='zh'?'下载':'Download'}</button></div>`;
+    window['_data_' + range] = data;
+  }
+});
+</script>
+</body></html>

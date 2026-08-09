@@ -1,0 +1,65 @@
+<!-- 结果页：换底色预览 + 导出 -->
+<view class="container safe-bottom">
+  <!-- 预览区 -->
+  <view class="preview-area">
+    <text class="preview-label">预览</text>
+    <view class="preview-card card">
+      <image
+        wx:if="{{previewPath}}"
+        class="preview-img"
+        src="{{previewPath}}"
+        mode="aspectFit"
+      ></image>
+      <view wx:else class="preview-empty">
+        <text>加载中…</text>
+      </view>
+    </view>
+
+    <!-- Canvas(隐藏，用于合成) -->
+    <canvas
+      type="2d"
+      id="resultCanvas"
+      style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"
+    ></canvas>
+  </view>
+
+  <!-- 底色选择器 -->
+  <view class="section">
+    <text class="section-title">选择底色</text>
+    <view class="color-grid">
+      <view
+        class="color-item {{currentBg === item.id ? 'active' : ''}}"
+        wx:for="{{bgColors}}"
+        wx:key="id"
+        wx:for-item="item"
+        data-id="{{item.id}}"
+        bindtap="onSelectBg"
+      >
+        <view class="color-dot" style="background:{{item.color}}"></view>
+        <text class="color-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 智能抠图按钮（有云函数时可用） -->
+  <view class="section">
+    <button
+      class="btn-ai"
+      bindtap="onAiRemoveBg"
+      disabled="{{processing}}"
+      loading="{{processing}}"
+    >
+      🤖 {{processing ? 'AI抠图中…' : 'AI 智能抠图换底（精准去背景）'}}
+    </button>
+    <text class="ai-hint">* 基于百度AI人像分割，发丝级精度 · 需部署云函数</text>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="bottom-actions safe-bottom">
+    <button class="btn-save" bindtap="onSave">💾 保存到相册</button>
+    <view class="sub-actions">
+      <text class="link-btn" bindtap="onReCrop">✂️ 重新裁剪</text>
+      <text class="link-btn" bindtap="onRestart">🔄 重新选择</text>
+    </view>
+  </view>
+</view>

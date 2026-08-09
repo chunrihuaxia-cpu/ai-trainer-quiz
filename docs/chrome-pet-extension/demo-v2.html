@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🐕 桌面宠物 — 柴犬</title>
+<style>
+:root{--bg:#e8f0fe}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);min-height:100vh;overflow:hidden;font-family:-apple-system,sans-serif}
+
+/* ── Pet Container ── */
+.pet{position:fixed;z-index:99999;cursor:grab;user-select:none;transition:filter .2s;filter:drop-shadow(2px 4px 6px rgba(0,0,0,.12))}
+.pet:active{cursor:grabbing}
+.pet.dragging{filter:drop-shadow(4px 8px 16px rgba(0,0,0,.2))}
+
+/* ── SVG 尺寸 ── */
+.pet svg{width:100px;height:100px;display:block}
+
+/* ── Idle 呼吸动画 ── */
+.pet.idle #body-group{animation:breath 3s ease-in-out infinite}
+.pet.idle #tail-group{animation:tailWag 1.5s ease-in-out infinite;transform-origin:78px 52px}
+.pet.idle #left-ear{animation:earTwitch 5s ease-in-out infinite}
+.pet.idle #right-ear{animation:earTwitch 5s ease-in-out .3s infinite}
+.pet.idle #eyes-group{animation:blink 4s ease-in-out infinite}
+
+@keyframes breath{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.98)}}
+@keyframes tailWag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(12deg)}}
+@keyframes earTwitch{0%,96%,100%{transform:rotate(0)}97%{transform:rotate(-15deg)}98%{transform:rotate(10deg)}99%{transform:rotate(0)}}
+@keyframes blink{0%,90%,96%,100%{transform:scaleY(1)}93%{transform:scaleY(.05)}}
+
+/* ── Walk 动画 ── */
+.pet.walk #body-group{animation:walkBounce .4s ease-in-out infinite}
+.pet.walk #front-left{animation:walkLeg .4s ease-in-out infinite}
+.pet.walk #front-right{animation:walkLeg .4s ease-in-out .2s infinite}
+.pet.walk #back-left{animation:walkLeg .4s ease-in-out .2s infinite}
+.pet.walk #back-right{animation:walkLeg .4s ease-in-out infinite}
+.pet.walk #tail-group{animation:tailWag .8s ease-in-out infinite}
+
+@keyframes walkBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes walkLeg{0%,100%{transform:rotate(0)}50%{transform:rotate(15deg)}}
+
+/* ── Drag 状态 ── */
+.pet.dragging #body-group{transform:scale(1.05,.92)}
+.pet.dragging #eyes-group{animation:spinEyes .6s linear infinite}
+.pet.dragging #front-left{animation:flail .3s ease-in-out infinite}
+.pet.dragging #front-right{animation:flail .3s ease-in-out .15s infinite}
+.pet.dragging #mouth-group{animation:none}
+.pet.dragging #mouth-group #happy-mouth{display:none}
+.pet.dragging #mouth-group #normal-mouth{display:block}
+
+@keyframes spinEyes{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes flail{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(20deg)}}
+
+/* ── Interact / Click 动画 ── */
+.pet.interact #left-ear{animation:earPop .4s ease-out}
+.pet.interact #right-ear{animation:earPop .4s ease-out .05s}
+.pet.interact #body-group{animation:bounce .4s ease-out}
+.pet.interact #mouth-group #normal-mouth{display:none}
+.pet.interact #mouth-group #happy-mouth{display:block}
+
+@keyframes earPop{0%{transform:scale(1.3) rotate(-20deg)}60%{transform:scale(.9) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bounce{0%{transform:scale(1,1)}30%{transform:scale(1.1,.85)}60%{transform:scale(.95,1.05)}100%{transform:scale(1,1)}}
+
+/* ── UI 提示 ── */
+.hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;pointer-events:none;z-index:100000;opacity:0;transition:opacity .3s}
+.hint.show{opacity:1}
+</style></head><body>
+
+<!-- 柴犬 SVG -->
+<div class="pet idle" id="pet" style="left:100px;top:100px">
+<svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGrad" cx="50%" cy="40%"><stop offset="0%" stop-color="#FDE4B8"/><stop offset="100%" stop-color="#E8A84C"/></radialGradient>
+    <radialGradient id="bellyGrad" cx="50%" cy="50%"><stop offset="0%" stop-color="#FFF8EE"/><stop offset="100%" stop-color="#FDE4B8"/></radialGradient>
+  </defs>
+
+  <!-- ── 后腿 (z底) ── -->
+  <g id="back-left" style="transform-origin:55px 100px">
+    <ellipse cx="58" cy="106" rx="12" ry="10" fill="#D4953A"/>
+    <ellipse cx="55" cy="114" rx="8" ry="5" fill="#FFF8EE"/>
+    <circle cx="51" cy="115" r="3" fill="#D4953A"/><circle cx="55" cy="116" r="3" fill="#D4953A"/><circle cx="59" cy="115" r="3" fill="#D4953A"/>
+  </g>
+  <g id="back-right" style="transform-origin:90px 100px">
+    <ellipse cx="88" cy="106" rx="12" ry="10" fill="#E8A84C"/>
+    <ellipse cx="91" cy="114" rx="8" ry="5" fill="#FFF8EE"/>
+    <circle cx="87" cy="115" r="3" fill="#D4953A"/><circle cx="91" cy="116" r="3" fill="#D4953A"/><circle cx="95" cy="115" r="3" fill="#D4953A"/>
+  </g>
+
+  <!-- ── 尾巴 ── -->
+  <g id="tail-group" style="transform-origin:78px 52px">
+    <path d="M80,55 Q100,30 92,20 Q84,14 78,25 Q72,14 66,20 Q60,28 72,42" fill="#E8A84C" stroke="#D4953A" stroke-width="1"/>
+  </g>
+
+  <!-- ── 身体 ── -->
+  <g id="body-group">
+    <ellipse cx="72" cy="75" rx="28" ry="24" fill="url(#bodyGrad)"/>
+    <ellipse cx="72" cy="80" rx="18" ry="14" fill="url(#bellyGrad)"/>
+  </g>
+
+  <!-- ── 前腿 ── -->
+  <g id="front-left" style="transform-origin:58px 88px">
+    <ellipse cx="56" cy="90" rx="10" ry="14" fill="#E8A84C"/>
+    <ellipse cx="56" cy="102" rx="7" ry="5" fill="#FFF8EE"/>
+    <circle cx="52" cy="103" r="3" fill="#D4953A"/><circle cx="56" cy="104" r="3" fill="#D4953A"/><circle cx="60" cy="103" r="3" fill="#D4953A"/>
+  </g>
+  <g id="front-right" style="transform-origin:82px 88px">
+    <ellipse cx="86" cy="90" rx="10" ry="14" fill="#D4953A"/>
+    <ellipse cx="86" cy="102" rx="7" ry="5" fill="#FFF8EE"/>
+    <circle cx="82" cy="103" r="3" fill="#D4953A"/><circle cx="86" cy="104" r="3" fill="#D4953A"/><circle cx="90" cy="103" r="3" fill="#D4953A"/>
+  </g>
+
+  <!-- ── 头部 ── -->
+  <g id="head-group">
+    <ellipse cx="72" cy="42" rx="30" ry="28" fill="url(#bodyGrad)"/>
+  </g>
+
+  <!-- ── 耳朵 ── -->
+  <g id="left-ear" style="transform-origin:52px 28px">
+    <polygon points="48,28 38,2 58,22" fill="#E8A84C" stroke="#D4953A" stroke-width=".5"/>
+    <polygon points="48,24 42,8 55,22" fill="#FFD4B8"/>
+  </g>
+  <g id="right-ear" style="transform-origin:92px 28px">
+    <polygon points="96,28 106,2 86,22" fill="#E8A84C" stroke="#D4953A" stroke-width=".5"/>
+    <polygon points="96,24 102,8 89,22" fill="#FFD4B8"/>
+  </g>
+
+  <!-- ── 脸部白斑 ── -->
+  <ellipse cx="72" cy="50" rx="18" ry="14" fill="#FFF8EE"/>
+
+  <!-- ── 眼睛 ── -->
+  <g id="eyes-group" style="transform-origin:72px 38px">
+    <ellipse cx="62" cy="38" rx="5" ry="6" fill="#333"/>
+    <ellipse cx="82" cy="38" rx="5" ry="6" fill="#333"/>
+    <circle cx="63" cy="35" r="2" fill="#fff"/>
+    <circle cx="83" cy="35" r="2" fill="#fff"/>
+    <!-- 眉毛 -->
+    <ellipse cx="62" cy="30" rx="6" ry="2" fill="#D4953A"/>
+    <ellipse cx="82" cy="30" rx="6" ry="2" fill="#D4953A"/>
+  </g>
+
+  <!-- ── 鼻子 ── -->
+  <ellipse cx="72" cy="46" rx="5" ry="4" fill="#333"/>
+  <ellipse cx="71" cy="45" rx="2" ry="1.5" fill="#666"/>
+
+  <!-- ── 嘴巴 ── -->
+  <g id="mouth-group">
+    <path id="normal-mouth" d="M62,54 Q72,62 82,54" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+    <path id="happy-mouth" d="M62,54 Q72,66 82,54" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" style="display:none"/>
+    <!-- 舌头 -->
+    <ellipse cx="72" cy="60" rx="5" ry="4" fill="#FF8A8A" style="display:none" id="tongue"/>
+  </g>
+
+  <!-- ── 腮红 ── -->
+  <ellipse cx="52" cy="48" rx="6" ry="3" fill="#FFB8B8" opacity=".4"/>
+  <ellipse cx="92" cy="48" rx="6" ry="3" fill="#FFB8B8" opacity=".4"/>
+</svg>
+</div>
+
+<div class="hint" id="hint">🐕 拖我走走 · 点击摸摸头</div>
+
+<script>
+// ── FSM State Machine ──
+var State={IDLE:'idle',WANDER:'wander',DRAGGING:'dragging',INTERACT:'interact'};
+var pet={el:null,state:State.IDLE,x:100,y:100,vx:0,vy:0,timer:0,dir:1,lastActivity:0};
+var drag={active:false,ox:0,oy:0,px:0,py:0};
+var hintTimer;
+
+(function init(){
+  pet.el=document.getElementById('pet');
+  pet.x=window.innerWidth/2-50;pet.y=window.innerHeight/2-50;
+  syncPos();
+
+  // Events
+  pet.el.addEventListener('mousedown',onDragStart);
+  pet.el.addEventListener('touchstart',onDragStart,{passive:false});
+  document.addEventListener('mousemove',onDragMove);
+  document.addEventListener('touchmove',onDragMove,{passive:false});
+  document.addEventListener('mouseup',onDragEnd);
+  document.addEventListener('touchend',onDragEnd);
+  pet.el.addEventListener('click',onClick);
+  pet.el.addEventListener('dblclick',onDblClick);
+
+  showHint();
+  setState(State.IDLE);
+  window._gameLoop=setInterval(gameLoop,40);
+  window._behaviorLoop=setInterval(behaviorTick,2000);
+})();
+
+function syncPos(){pet.el.style.left=pet.x+'px';pet.el.style.top=pet.y+'px';}
+
+function setState(s){
+  if(pet.state===s)return;
+  pet.el.classList.remove('idle','walk','dragging','interact');
+  pet.state=s;
+  pet.timer=0;
+  if(s===State.IDLE)pet.el.classList.add('idle');
+  if(s===State.WANDER)pet.el.classList.add('walk');
+  if(s===State.DRAGGING)pet.el.classList.add('dragging');
+  if(s===State.INTERACT)pet.el.classList.add('interact');
+}
+
+// ── Drag ──
+function onDragStart(e){
+  e.preventDefault();e.stopPropagation();
+  drag.active=true;drag.ox=pet.x;drag.oy=pet.y;
+  var t=e.touches?e.touches[0]:e;
+  drag.px=t.clientX;drag.py=t.clientY;
+  pet.el.style.transition='none';
+  setState(State.DRAGGING);
+}
+function onDragMove(e){
+  if(!drag.active)return;
+  var t=e.touches?e.touches[0]:e;
+  pet.x+=t.clientX-drag.px;pet.y+=t.clientY-drag.py;
+  drag.px=t.clientX;drag.py=t.clientY;
+  syncPos();pet.lastActivity=Date.now();
+}
+function onDragEnd(){
+  if(!drag.active)return;
+  drag.active=false;
+  pet.el.style.transition='';
+  var dx=pet.x-drag.ox,dy=pet.y-drag.oy,dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<5)setState(State.IDLE);
+  else{
+    pet.vx=dx*.2;pet.vy=dy*.2;
+    setState(State.WANDER);
+    setTimeout(function(){if(pet.state===State.WANDER)setState(State.IDLE)},2000);
+  }
+  pet.lastActivity=Date.now();
+}
+
+// ── Click ──
+function onClick(e){e.stopPropagation();setState(State.INTERACT);pet.lastActivity=Date.now();setTimeout(function(){if(pet.state===State.INTERACT)setState(State.IDLE)},800)}
+function onDblClick(e){e.stopPropagation();pet.vx=(Math.random()-.5)*10;pet.vy=-8;setState(State.WANDER);setTimeout(function(){if(pet.state===State.WANDER)setState(State.IDLE)},2000)}
+
+// ── Game Loop ──
+function gameLoop(){
+  var w=window.innerWidth-100,h=window.innerHeight-100;
+  if(pet.state===State.WANDER||pet.state===State.IDLE){
+    pet.x+=pet.vx;pet.y+=pet.vy;
+    pet.vx*=0.95;pet.vy*=0.95;
+
+    if(pet.state===State.WANDER&&Math.abs(pet.vx)<.3&&Math.abs(pet.vy)<.3)setState(State.IDLE);
+    // Bounce
+    if(pet.x<0){pet.x=0;pet.vx=Math.abs(pet.vx);if(pet.state===State.WANDER)pet.dir=-pet.dir}
+    if(pet.x>w){pet.x=w;pet.vx=-Math.abs(pet.vx);if(pet.state===State.WANDER)pet.dir=-pet.dir}
+    if(pet.y<0){pet.y=0;pet.vy=Math.abs(pet.vy)}
+    if(pet.y>h){pet.y=h;pet.vy=-Math.abs(pet.vy)}
+  }
+  syncPos();
+
+  // Face direction
+  if(pet.vx>.5)pet.el.style.transform='scaleX(1)';
+  if(pet.vx<-.5)pet.el.style.transform='scaleX(-1)';
+}
+
+// ── Behavior ──
+function behaviorTick(){
+  pet.timer++;
+  if(pet.state===State.DRAGGING||pet.state===State.INTERACT)return;
+  if(Date.now()-pet.lastActivity>15000&&pet.state===State.IDLE){
+    // Auto wander
+    pet.vx=(Math.random()-.5)*6;pet.vy=(Math.random()-.5)*3;
+    pet.dir=pet.vx>0?1:-1;pet.el.style.transform='scaleX('+pet.dir+')';
+    setState(State.WANDER);
+    setTimeout(function(){if(pet.state===State.WANDER)setState(State.IDLE)},3000);
+  }
+  pet.lastActivity=Date.now();
+}
+
+function showHint(){var h=document.getElementById('hint');h.classList.add('show');setTimeout(function(){h.classList.remove('show')},6000)}
+</script>
+</body></html>

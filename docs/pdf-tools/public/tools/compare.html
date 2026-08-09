@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF对比</title><link rel="stylesheet" href="/css/style.css">
+<style>.compare-view{display:flex;gap:2px;margin-top:16px}.compare-view>div{flex:1;overflow:hidden;border:1px solid var(--border);border-radius:8px}.compare-view canvas{width:100%;display:block}.diff-line{background:rgba(255,77,79,.15);padding:2px 4px;border-radius:2px}.diff-added{background:rgba(82,196,26,.15)}</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:1000px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>🔍 PDF 对比</h1>
+  <p style="color:var(--text2);margin-bottom:4px">逐页对比两个 PDF，找出文字差异</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:16px">🔒 浏览器本地处理，不上传</p>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">📄 原始 PDF（旧版本）</label>
+      <div class="upload-zone" id="uploadA" style="padding:20px"><span class="upload-icon">📄</span><div class="upload-text">点击选择原始 PDF</div></div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">📄 新版 PDF</label>
+      <div class="upload-zone" id="uploadB" style="padding:20px"><span class="upload-icon">📄</span><div class="upload-text">点击选择新版 PDF</div></div>
+    </div>
+  </div>
+
+  <div id="resultArea" style="margin-top:16px"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var texts={a:'',b:''};
+
+function setupUpload(id,key){var el=document.getElementById(id);el.addEventListener('click',function(){var i=document.createElement('input');i.type='file';i.accept='.pdf';i.onchange=function(e){loadPDF(e.target.files[0],key,id)};i.click()});el.addEventListener('dragover',function(e){e.preventDefault()});el.addEventListener('drop',function(e){e.preventDefault();loadPDF(e.dataTransfer.files[0],key,id)})}
+
+setupUpload('uploadA','a');setupUpload('uploadB','b');
+
+function loadPDF(file,key,id){
+  file.arrayBuffer().then(function(b){return pdfjsLib.getDocument({data:b}).promise}).then(async function(doc){
+    var t='';for(var i=1;i<=doc.numPages;i++){var p=await doc.getPage(i);var c=await p.getTextContent();t+=c.items.map(function(it){return it.str}).join(' ')+'\n'}
+    texts[key]=t;
+    document.getElementById(id).style.opacity='0.5';
+    document.getElementById(id).querySelector('.upload-text').textContent='✅ 已加载 ('+doc.numPages+'页)';
+    if(texts.a&&texts.b) compareTexts();
+  });
+}
+
+function compareTexts(){
+  var a=texts.a.split(/\s+/),b=texts.b.split(/\s+/);
+  var added=0,removed=0,changed=0;
+  var wordsA={};a.forEach(function(w){wordsA[w]=(wordsA[w]||0)+1});
+  var wordsB={};b.forEach(function(w){wordsB[w]=(wordsB[w]||0)+1});
+  Object.keys(wordsA).forEach(function(w){if(!wordsB[w])removed++;else if(wordsB[w]!==wordsA[w])changed++});
+  Object.keys(wordsB).forEach(function(w){if(!wordsA[w])added++});
+
+  var result=document.getElementById('resultArea');
+  var totalDiff=added+removed+changed;
+  result.innerHTML='<div class="card" style="text-align:center"><div style="font-size:48px;margin:12px 0">🔍</div><h2>'+(totalDiff===0?'✅ 两份 PDF 文字内容完全一致':'⚠️ 检测到差异')+'</h2><div style="display:flex;gap:16px;justify-content:center;margin:16px 0;flex-wrap:wrap">'+
+    '<div style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--green)">'+added+'</div><div style="font-size:12px;color:var(--text2)">新增词汇</div></div>'+
+    '<div style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--red)">'+removed+'</div><div style="font-size:12px;color:var(--text2)">删除词汇</div></div>'+
+    '<div style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--orange)">'+changed+'</div><div style="font-size:12px;color:var(--text2)">变化词汇</div></div></div>'+
+    '<p style="font-size:12px;color:var(--text2)">原始文档: '+a.length+' 词 | 新版: '+b.length+' 词 | 总差异: '+totalDiff+' 处</p></div>';
+}
+</script>
+</body></html>

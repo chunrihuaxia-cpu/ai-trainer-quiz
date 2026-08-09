@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🐊🦎 双宠桌面</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;overflow:hidden;background:linear-gradient(145deg,#0f172a,#1e293b,#334155)}
+.pet{position:fixed;z-index:999999;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;transition:transform .4s cubic-bezier(.25,.8,.25,1.2),filter .3s ease;filter:drop-shadow(0 6px 20px rgba(0,0,0,.3))}
+.pet:hover{transform:scale(1.08);filter:drop-shadow(0 8px 28px rgba(0,0,0,.4))}
+.pet:active{cursor:grabbing}
+.pet.dragging{transition:none;transform:scale(1.1) rotate(5deg);filter:drop-shadow(0 10px 32px rgba(0,0,0,.45))}
+.pet svg{width:100%;height:100%}
+.pet.bounce{animation:petBounce .55s cubic-bezier(.25,.8,.25,1.3)}
+#pet1{width:320px;height:180px}
+#pet2{width:200px;height:300px}
+@keyframes petBounce{0%{transform:scale(1) translateY(0)}25%{transform:scale(1.15) translateY(-24px)}50%{transform:scale(.92) translateY(-6px)}75%{transform:scale(1.04) translateY(-2px)}100%{transform:scale(1) translateY(0)}}
+.bubble{position:fixed;z-index:1000000;pointer-events:none;background:rgba(0,0,0,.82);color:#fff;padding:8px 18px;border-radius:20px;font-size:14px;font-family:-apple-system,'PingFang SC',sans-serif;white-space:nowrap;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
+.bubble.show{opacity:1;transform:translateY(0)}
+.bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid rgba(0,0,0,.82)}
+.hint{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.55);font-size:13px;z-index:1000001;pointer-events:none;opacity:0;transition:opacity .5s;font-family:-apple-system,sans-serif}
+.hint.show{opacity:1}
+</style></head><body>
+
+<div class="pet" id="pet1"></div>
+<div class="pet" id="pet2"></div>
+<div class="bubble" id="bubble"></div>
+<div class="hint" id="hint">🐊🦎 两只宠物 · 各自拖拽 · 自动巡逻</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<script src="crocodile_data.js"></script>
+<script src="pet2_data.js"></script>
+<script>
+// ── Pet instances ──
+var pets=[
+  {id:'pet1',anim:null,x:0,y:0,w:320,h:180,data:'CROC_ANIM',msgs:['你好呀！🐊','滑板车最快！🛹','晒太阳中…☀️']},
+  {id:'pet2',anim:null,x:0,y:0,w:200,h:300,data:'PET2_ANIM',msgs:['Hello! 🦎','Catch me!','Having fun~']}
+];
+var drag={active:false,px:0,py:0,target:null};
+var bubbleTimer=null,walkTimers=[];
+
+(function init(){
+  pets.forEach(function(p,i){
+    p.el=document.getElementById(p.id);
+    p.x=(i===0)?window.innerWidth-350:window.innerWidth-250;
+    p.y=(i===0)?window.innerHeight-210:window.innerHeight-330;
+    p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
+
+    p.anim=lottie.loadAnimation({container:p.el,renderer:'svg',loop:true,autoplay:true,animationData:i===0?CROC_ANIM:PET2_ANIM});
+
+    p.el.addEventListener('mousedown',function(e){startDrag(e,p)});
+    p.el.addEventListener('touchstart',function(e){startDrag(e,p)},{passive:false});
+    p.el.addEventListener('click',function(e){e.stopPropagation();clickPet(p)});
+
+    startPatrol(p);
+  });
+
+  document.addEventListener('mousemove',moveDrag);
+  document.addEventListener('touchmove',moveDrag,{passive:false});
+  document.addEventListener('mouseup',endDrag);
+  document.addEventListener('touchend',endDrag);
+
+  var h=document.getElementById('hint');h.classList.add('show');
+  setTimeout(function(){h.classList.remove('show')},6000);
+})();
+
+function startDrag(e,p){
+  e.preventDefault();e.stopPropagation();
+  drag.target=p;drag.active=true;
+  var t=e.touches?e.touches[0]:e;
+  drag.px=t.clientX-p.x;drag.py=t.clientY-p.y;
+  p.el.classList.add('dragging');
+}
+function moveDrag(e){
+  if(!drag.active||!drag.target)return;
+  var t=e.touches?e.touches[0]:e;
+  var p=drag.target;
+  p.x=t.clientX-drag.px;p.y=t.clientY-drag.py;
+  p.x=Math.max(0,Math.min(window.innerWidth-p.w,p.x));
+  p.y=Math.max(0,Math.min(window.innerHeight-p.h,p.y));
+  p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
+}
+function endDrag(){
+  if(drag.target)drag.target.el.classList.remove('dragging');
+  drag.active=false;drag.target=null;
+}
+
+function clickPet(p){
+  p.el.classList.remove('bounce');void p.el.offsetWidth;p.el.classList.add('bounce');
+  var b=document.getElementById('bubble');
+  b.textContent=p.msgs[Math.floor(Math.random()*p.msgs.length)];
+  b.style.left=(p.x+p.w/2)+'px';b.style.top=(p.y-40)+'px';
+  b.classList.add('show');clearTimeout(bubbleTimer);
+  bubbleTimer=setTimeout(function(){b.classList.remove('show')},1500);
+}
+
+function startPatrol(p){
+  walkTimers.push(setInterval(function(){
+    if(drag.active||p._walking)return;
+    var mid=window.innerWidth/2;
+    var targetX=p.x>mid?40:window.innerWidth-p.w-40;
+    var speed=(targetX>p.x?1:-1)*1.5;
+    p._walking=true;
+    p.el.style.transform='scaleX('+(speed>0?1:-1)+')';
+    var iv=setInterval(function(){
+      if(drag.active){p._walking=false;clearInterval(iv);return}
+      p.x+=speed;
+      if((speed>0&&p.x>=targetX)||(speed<0&&p.x<=targetX)){p.x=targetX;p._walking=false;clearInterval(iv);p.el.style.transform=''}
+      p.x=Math.max(0,Math.min(window.innerWidth-p.w,p.x));
+      p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
+    },20);
+  },10000+Math.random()*8000));
+}
+</script></body></html>

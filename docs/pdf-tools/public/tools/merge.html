@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF合并</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool</a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1 data-i18n="tools.merge.name"></h1>
+  <p style="color:var(--text2);margin-bottom:24px" data-i18n="tools.merge.desc"></p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">📑</span><div class="upload-text" data-i18n="upload.drop"></div><div class="upload-hint" data-i18n="upload.max"></div></div>
+  <div class="file-list" id="fileList"></div>
+  <div id="result"></div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone, formatSize, downloadBlob } from '/js/common.js';
+let files = [];
+
+function renderFiles() {
+  const el = document.getElementById('fileList');
+  el.innerHTML = files.map((f,i) => `<div class="file-item"><span class="move">☰</span><span>📄 ${f.name}</span><span class="result-size">${formatSize(f.size)}</span><span class="remove" onclick="window._remove(${i})">×</span></div>`).join('') +
+    (files.length>1 ? `<button class="btn btn-primary" style="margin-top:8px" onclick="window._merge()">🔗 ${I18n._lang==='zh'?'合并文件':"Merge Files"}</button>` : '');
+}
+window._remove = i => { files.splice(i,1); renderFiles(); };
+
+initUploadZone('upload', (newFiles) => {
+  files.push(...newFiles);
+  renderFiles();
+}, { multiple: true, accept: '.pdf' });
+
+window._merge = async () => {
+  const { PDFDocument } = PDFLib;
+  const dest = await PDFDocument.create();
+  for (const f of files) {
+    const buf = await f.arrayBuffer();
+    const src = await PDFDocument.load(buf, { ignoreEncryption: true });
+    const pages = await dest.copyPages(src, src.getPageIndices());
+    pages.forEach(p => dest.addPage(p));
+  }
+  const data = await dest.save();
+  downloadBlob(new Blob([data]), 'merged.pdf');
+};
+</script>
+</body></html>

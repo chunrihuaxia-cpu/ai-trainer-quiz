@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF转图片</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool</a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1 data-i18n="tools.to-image.name"></h1>
+  <p style="color:var(--text2);margin-bottom:24px" data-i18n="tools.to-image.desc"></p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">🖼️</span><div class="upload-text" data-i18n="upload.drop"></div></div>
+  <div class="progress-bar hidden" id="progressWrap"><div class="progress-fill" id="progressBar"></div></div>
+  <div id="result"></div>
+</div>
+<script src="/js/i18n.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+initUploadZone('upload', async ([file]) => {
+  const wrap = document.getElementById('progressWrap'), bar = document.getElementById('progressBar'), result = document.getElementById('result');
+  wrap.classList.remove('hidden'); bar.style.width = '20%';
+  const form = new FormData(); form.append('file', file);
+  try {
+    const r = await fetch('/api/to-image', { method: 'POST', body: form });
+    bar.style.width = '80%';
+    if (!r.ok) throw new Error('Conversion failed');
+    const blob = await r.blob();
+    bar.style.width = '100%'; wrap.classList.add('hidden');
+    const url = URL.createObjectURL(blob);
+    const name = file.name.replace(/\.pdf$/i, '.zip');
+    result.innerHTML = `<div class="result-card"><div class="result-file"><span class="result-icon">🖼️</span><div class="result-name">${name}</div></div><a class="btn btn-success" style="margin-top:12px;justify-content:center" href="${url}" download="${name}">💾 ${I18n._lang==='zh'?'下载图片ZIP':'Download ZIP'}</a></div>`;
+  } catch(e) {
+    wrap.classList.add('hidden');
+    result.innerHTML = `<div class="result-card" style="border-color:var(--red)"><p>❌ ${I18n._lang==='zh'?'转换失败，请重试':'Conversion failed.'}</p></div>`;
+  }
+}, { multiple: false, accept: '.pdf' });
+</script>
+</body></html>

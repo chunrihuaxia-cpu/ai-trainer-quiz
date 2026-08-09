@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF签名</title><link rel="stylesheet" href="/css/style.css">
+<style>.sign-pad{border:2px solid var(--border);border-radius:8px;cursor:crosshair;background:#fff;touch-action:none}
+.sign-preview{max-width:200px;border:1px solid var(--border);border-radius:4px;margin:8px 0}
+</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:800px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>✍️ PDF 签名</h1>
+  <p style="color:var(--text2);margin-bottom:4px">手写签名插入到 PDF 中</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理，不上传</p>
+
+  <div class="upload-zone" id="upload" style="padding:30px;margin:0 0 16px"><span class="upload-icon">📄</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+
+  <div id="workspace" class="hidden" style="margin-top:16px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:250px">
+        <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">绘制签名</label>
+        <canvas class="sign-pad" id="signPad" width="300" height="120" style="width:100%"></canvas>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-secondary btn-sm" onclick="clearSign()">清除</button>
+          <span style="font-size:12px;color:var(--text2);align-self:center">或</span>
+          <label style="font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;align-self:center">📁 上传签名图片<input type="file" accept="image/*" onchange="loadSignImg(this)" style="display:none"></label>
+        </div>
+      </div>
+      <div style="flex:1;min-width:250px">
+        <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">预览</label>
+        <canvas id="previewCanvas" style="width:100%;border:1px solid var(--border);border-radius:8px"></canvas>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-secondary btn-sm" id="prevBtn">◀ 上一页</button>
+          <span style="font-size:13px;align-self:center" id="pageInfo"></span>
+          <button class="btn btn-secondary btn-sm" id="nextBtn">下一页 ▶</button>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="applySign()">✍️ 在此页插入签名并下载</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var pdfDoc=null,currentPage=1,totalPages=0,srcBytes=null,signImg=null;
+
+// Signature pad
+var pad=document.getElementById('signPad'),ctx=pad.getContext('2d'),drawing=false;
+pad.addEventListener('mousedown',function(e){drawing=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY)});
+pad.addEventListener('mousemove',function(e){if(!drawing)return;ctx.lineTo(e.offsetX,e.offsetY);ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke()});
+pad.addEventListener('mouseup',function(){drawing=false});
+pad.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];drawing=true;ctx.beginPath();ctx.moveTo(t.clientX-pad.getBoundingClientRect().left,t.clientY-pad.getBoundingClientRect().top)});
+pad.addEventListener('touchmove',function(e){e.preventDefault();if(!drawing)return;var t=e.touches[0];ctx.lineTo(t.clientX-pad.getBoundingClientRect().left,t.clientY-pad.getBoundingClientRect().top);ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke()});
+pad.addEventListener('touchend',function(){drawing=false});
+window.clearSign=function(){ctx.clearRect(0,0,pad.width,pad.height);};
+
+function loadSignImg(input){var f=input.files[0];if(!f)return;var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,pad.width,pad.height)};img.src=URL.createObjectURL(f);}
+
+// Upload PDF
+document.getElementById('upload').addEventListener('click',function(){var i=document.createElement('input');i.type='file';i.accept='.pdf';i.onchange=function(e){loadPDF(e.target.files[0])};i.click()});
+document.getElementById('upload').addEventListener('dragover',function(e){e.preventDefault()});
+document.getElementById('upload').addEventListener('drop',function(e){e.preventDefault();loadPDF(e.dataTransfer.files[0])});
+
+function loadPDF(file){
+  file.arrayBuffer().then(function(b){srcBytes=b;return pdfjsLib.getDocument({data:b}).promise}).then(function(d){pdfDoc=d;totalPages=d.numPages;document.getElementById('workspace').classList.remove('hidden');document.getElementById('upload').style.opacity='0.5';renderPage(1)});
+}
+
+function renderPage(n){currentPage=n;document.getElementById('pageInfo').textContent='第 '+n+'/'+totalPages+' 页';pdfDoc.getPage(n).then(function(p){var v=1.2;var vp=p.getViewport({scale:v});var c=document.getElementById('previewCanvas');c.width=vp.width;c.height=vp.height;p.render({canvasContext:c.getContext('2d'),viewport:vp})})}
+document.getElementById('prevBtn').onclick=function(){if(currentPage>1)renderPage(currentPage-1)};
+document.getElementById('nextBtn').onclick=function(){if(currentPage<totalPages)renderPage(currentPage+1)};
+
+window.applySign=function(){
+  var signData=pad.toDataURL('image/png');
+  fetch(signData).then(function(r){return r.blob()}).then(function(blob){return blob.arrayBuffer()}).then(function(buf){
+    return PDFLib.PDFDocument.load(srcBytes,{ignoreEncryption:true}).then(function(doc){
+      return doc.embedPng(buf).then(function(img){
+        var page=doc.getPages()[currentPage-1];
+        var size=page.getSize();
+        // Place signature at bottom-right
+        var sw=150,sh=60;
+        page.drawImage(img,{x:size.width-sw-30,y:30,width:sw,height:sh});
+        return doc.save();
+      });
+    });
+  }).then(function(data){
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='signed.pdf';a.click();
+  });
+};
+</script>
+</body></html>

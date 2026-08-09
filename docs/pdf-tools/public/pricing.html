@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>定价</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool</a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<main>
+  <section class="hero"><h1 data-i18n="pricing.title"></h1><div class="pricing-toggle"><span data-i18n="pricing.perMonth"></span></div></section>
+  <div class="pricing-grid">
+    <div class="pricing-card"><div class="pricing-name" data-i18n="pricing.free"></div><div class="pricing-price"><span data-i18n="pricing.freePrice"></span><small data-i18n="pricing.perMonth"></small></div><ul class="pricing-features" id="freeFeats"></ul></div>
+    <div class="pricing-card pro"><div class="pricing-name" data-i18n="pricing.pro"></div><div class="pricing-price"><span data-i18n="pricing.proPrice"></span><small data-i18n="pricing.perMonth"></small></div><ul class="pricing-features" id="proFeats"></ul><a href="/api/checkout?plan=pro" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px" data-i18n="pricing.cta"></a></div>
+    <div class="pricing-card"><div class="pricing-name" data-i18n="pricing.enterprise"></div><div class="pricing-price"><span data-i18n="pricing.enterprisePrice"></span><small data-i18n="pricing.perMonth"></small></div><ul class="pricing-features" id="entFeats"></ul><a href="/api/checkout?plan=enterprise" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:12px" data-i18n="pricing.cta"></a></div>
+  </div>
+</main>
+<footer class="footer" data-i18n="footer"></footer>
+<script src="/js/i18n.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    ['free','pro','enterprise'].forEach(p => {
+      const el = document.getElementById(p.slice(0,4)==='free'?'freeFeats':p.slice(0,4)==='ente'?'entFeats':'proFeats');
+      if (el) (I18n._data.pricing[p+'Desc']||[]).forEach(d => { const li=document.createElement('li');li.textContent=d;el.appendChild(li); });
+    });
+  }, 200);
+});
+</script>
+</body></html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF添加水印</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒 不上传</span></a><div class="nav-links"><a href="/" class="nav-link" data-i18n="nav.home"></a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')" data-i18n="nav.lang"></button></div></nav>
+<div class="container">
+  <a href="/" class="page-back">← <span data-i18n="nav.home"></span></a>
+  <h1>💧 添加水印</h1>
+  <p style="color:var(--text2);margin-bottom:4px">给 PDF 添加文字水印</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理，不上传</p>
+  <div class="upload-zone" id="upload"><span class="upload-icon">💧</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="config" class="hidden card" style="margin:16px auto;max-width:500px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">水印文字</label>
+    <input id="wmText" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px" value="机密文件">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">透明度</label>
+    <input id="wmOpacity" type="range" min="10" max="80" value="30" style="width:100%;margin-bottom:12px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">字号</label>
+    <input id="wmSize" type="range" min="20" max="120" value="60" style="width:100%;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="window._apply()">💧 添加水印并下载</button>
+  </div>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+let srcDoc=null;
+initUploadZone('upload',async([file])=>{
+  const { PDFDocument }=PDFLib;
+  srcDoc=await PDFDocument.load(await file.arrayBuffer(),{ignoreEncryption:true});
+  document.getElementById('config').classList.remove('hidden');
+  document.getElementById('upload').style.opacity='0.5';
+});
+window._apply=async()=>{
+  const { PDFDocument,rgb,StandardFonts }=PDFLib;
+  const text=document.getElementById('wmText').value||'机密';
+  const opacity=parseInt(document.getElementById('wmOpacity').value)/100;
+  const size=parseInt(document.getElementById('wmSize').value);
+  const font=await srcDoc.embedFont(StandardFonts.Helvetica);
+  const pages=srcDoc.getPages();
+  pages.forEach(p=>{
+    const {width,height}=p.getSize();
+    // Draw watermark text diagonal across page
+    for(let y=-height;y<height*2;y+=size*2.5){
+      for(let x=-width;x<width*2;x+=size*6){
+        p.drawText(text,{x,y,size,font,color:rgb(0,0,0),opacity,
+          rotate:{type:'degrees',angle:45}});
+      }
+    }
+  });
+  const data=await srcDoc.save();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='watermarked.pdf';a.click();
+};
+</script>
+</body></html>

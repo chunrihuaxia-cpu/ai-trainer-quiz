@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🐕 Lottie 桌面宠物</title>
+<style>
+:root{--bg:linear-gradient(135deg,#e8f0fe,#f0e6ff)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);min-height:100vh;overflow:hidden;font-family:-apple-system,sans-serif}
+
+/* ── 宠物容器 ── */
+.pet-wrapper{
+  position:fixed;z-index:99999;cursor:grab;
+  width:140px;height:140px;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .25s cubic-bezier(.25,.8,.25,1.2),filter .2s;
+  filter:drop-shadow(3px 6px 10px rgba(0,0,0,.15));
+  user-select:none;-webkit-user-select:none;
+}
+.pet-wrapper:active{cursor:grabbing}
+.pet-wrapper.dragging{
+  transform:scale(1.08) rotate(5deg);
+  filter:drop-shadow(6px 12px 20px rgba(0,0,0,.22));
+}
+.pet-wrapper.walk{
+  animation:walkBob .5s ease-in-out infinite;
+}
+@keyframes walkBob{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+
+/* ── Lottie 画布 ── */
+.pet-wrapper lottie-player,
+.pet-wrapper #lottieCanvas{
+  width:100%;height:100%;pointer-events:none;
+}
+
+/* ── 点击反弹 ── */
+.pet-wrapper.bounce{
+  animation:bounceAnim .5s cubic-bezier(.25,.8,.25,1.2);
+}
+@keyframes bounceAnim{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.18)}
+  60%{transform:scale(.92)}
+  100%{transform:scale(1)}
+}
+
+/* ── 影子 ── */
+.pet-shadow{
+  position:fixed;z-index:99998;pointer-events:none;
+  width:80px;height:16px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.12),transparent);
+  border-radius:50%;
+  transition:left .15s,top .15s;
+}
+
+/* ── 提示 ── */
+.hint{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.78);color:#fff;padding:10px 22px;
+  border-radius:24px;font-size:14px;pointer-events:none;z-index:100000;
+  opacity:0;transition:opacity .4s;letter-spacing:.5px;
+}
+.hint.show{opacity:1}
+
+/* ── 状态指示器 ── */
+.status-dot{
+  position:fixed;top:16px;right:16px;z-index:100001;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.9);padding:6px 14px;
+  border-radius:20px;font-size:12px;color:#666;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+}
+.status-dot .dot{width:8px;height:8px;border-radius:50%}
+.dot.idle{background:#52C41A}.dot.walk{background:#1677FF}.dot.drag{background:#FA8C16}
+</style></head><body>
+
+<!-- 影子 -->
+<div class="pet-shadow" id="shadow"></div>
+
+<!-- 宠物 -->
+<div class="pet-wrapper" id="pet">
+  <div id="lottieCanvas"></div>
+</div>
+
+<!-- 提示 -->
+<div class="hint" id="hint">🐕 可拖拽 · 点击互动 · 双击喂食</div>
+
+<!-- 状态 -->
+<div class="status-dot"><span class="dot idle" id="statusDot"></span><span id="statusText">待机中</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<script>
+// ── State ──
+var pet={
+  el:null, shadow:null, anim:null,
+  x:0, y:0, vx:0, vy:0,
+  state:'idle', timer:0
+};
+var drag={active:false,px:0,py:0,ox:0,oy:0};
+
+// ── Init ──
+(function init(){
+  pet.el=document.getElementById('pet');
+  pet.shadow=document.getElementById('shadow');
+
+  // 居中放置
+  pet.x=window.innerWidth/2-70; pet.y=window.innerHeight/2-70;
+  syncPos();
+
+  // 加载 Lottie（优先 .lottie，回退到公开 JSON）
+  var animData={
+    container:document.getElementById('lottieCanvas'),
+    renderer:'svg',
+    loop:true,
+    autoplay:true
+  };
+  // 先用免费公开动画
+  animData.path='https://assets2.lottiefiles.com/packages/lf20_gr0cvmdt.json';
+  pet.anim=lottie.loadAnimation(animData);
+
+  // Events
+  pet.el.addEventListener('mousedown',onDown);
+  pet.el.addEventListener('touchstart',onDown,{passive:false});
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchend',onUp);
+  pet.el.addEventListener('click',onClick);
+  pet.el.addEventListener('dblclick',onDblClick);
+
+  setState('idle');
+  showHint();
+  window._loop=setInterval(gameLoop,40);
+  window._behavior=setInterval(behaviorTick,2000);
+
+  // Resize 时限制在窗口内
+  window.addEventListener('resize',function(){
+    pet.x=Math.min(pet.x,window.innerWidth-140);
+    pet.y=Math.min(pet.y,window.innerHeight-140);
+    syncPos();
+  });
+})();
+
+// ── Position ──
+function syncPos(){
+  pet.el.style.left=pet.x+'px'; pet.el.style.top=pet.y+'px';
+  pet.shadow.style.left=(pet.x+30)+'px'; pet.shadow.style.top=(pet.y+130)+'px';
+}
+
+// ── FSM ──
+function setState(s){
+  pet.state=s;pet.el.classList.remove('walk','dragging','bounce');
+  document.querySelectorAll('.dot').forEach(function(d){d.className='dot '+s});
+  var labels={idle:'待机中',walk:'散步中',drag:'拖拽中',interact:'互动中'};
+  document.getElementById('statusText').textContent=labels[s]||s;
+  if(s==='walk')pet.el.classList.add('walk');
+}
+
+// ── Drag ──
+function onDown(e){
+  e.preventDefault();e.stopPropagation();
+  drag.active=true;drag.ox=pet.x;drag.oy=pet.y;
+  var t=e.touches?e.touches[0]:e;
+  drag.px=t.clientX;drag.py=t.clientY;
+  pet.el.style.transition='none';
+  pet.el.classList.add('dragging');
+  setState('drag');
+}
+function onMove(e){
+  if(!drag.active)return;
+  var t=e.touches?e.touches[0]:e;
+  pet.x+=t.clientX-drag.px;pet.y+=t.clientY-drag.py;
+  drag.px=t.clientX;drag.py=t.clientY;
+  syncPos();
+}
+function onUp(){
+  if(!drag.active)return;
+  drag.active=false;
+  pet.el.style.transition='';
+  pet.el.classList.remove('dragging');
+  var dx=pet.x-drag.ox,dy=pet.y-drag.oy;
+  pet.vx=dx*.15;pet.vy=dy*.15;
+  if(Math.abs(dx)>5||Math.abs(dy)>5)setState('walk');
+  else setState('idle');
+}
+
+// ── Click ──
+function onClick(e){e.stopPropagation();setState('interact');pet.el.classList.add('bounce');setTimeout(function(){pet.el.classList.remove('bounce');setState('idle')},500)}
+function onDblClick(e){e.stopPropagation();pet.vx=(Math.random()-.5)*10;pet.vy=-10;setState('walk')}
+
+// ── Game Loop ──
+function gameLoop(){
+  var w=window.innerWidth-140,h=window.innerHeight-140;
+  if(pet.state==='walk'||pet.state==='idle'){
+    pet.x+=pet.vx;pet.y+=pet.vy;
+    pet.vx*=.96;pet.vy*=.96;
+    if(pet.state==='walk'&&Math.abs(pet.vx)<.3&&Math.abs(pet.vy)<.3)setState('idle');
+    if(pet.x<0){pet.x=0;pet.vx*=-1}
+    if(pet.x>w){pet.x=w;pet.vx*=-1}
+    if(pet.y<0){pet.y=0;pet.vy*=-1}
+    if(pet.y>h){pet.y=h;pet.vy*=-1}
+  }
+  syncPos();
+}
+
+// ── Auto Behavior ──
+function behaviorTick(){
+  if(pet.state==='drag'||pet.state==='interact')return;
+  pet.timer++;
+  if(pet.timer%8===0){
+    pet.vx=(Math.random()-.5)*5;pet.vy=(Math.random()-.5)*3;
+    if(Math.abs(pet.vx)>.5)setState('walk');
+    setTimeout(function(){if(pet.state==='walk')setState('idle')},2500+Math.random()*2000);
+  }
+}
+
+function showHint(){var h=document.getElementById('hint');h.classList.add('show');setTimeout(function(){h.classList.remove('show')},5000)}
+</script>
+</body></html>

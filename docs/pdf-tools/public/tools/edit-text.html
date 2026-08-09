@@ -1,0 +1,215 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF文字编辑</title><link rel="stylesheet" href="/css/style.css">
+<style>
+.page-wrap{position:relative;margin:16px auto;box-shadow:0 2px 12px rgba(0,0,0,.1);background:#fff}
+.page-wrap canvas{display:block;opacity:.08}
+.text-overlay{position:absolute;top:0;left:0;overflow:hidden;line-height:1}
+.text-overlay span{position:absolute;white-space:pre;transform-origin:0 0;cursor:text;border-radius:1px;padding:0 1px;color:#1a1a1a;font-family:inherit;outline:none;min-width:2px}
+.text-overlay span:hover{background:rgba(37,99,235,.12)}
+.text-overlay span:focus{background:rgba(37,99,235,.18);box-shadow:0 0 0 1px var(--primary);z-index:10}
+.text-overlay span.edited{background:rgba(82,196,26,.1);border-bottom:1px dashed var(--green)}
+.toolbar{display:flex;gap:8px;align-items:center;padding:12px 0;flex-wrap:wrap}
+.tip{font-size:12px;color:var(--text2);text-align:center;margin-top:8px}
+</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:1000px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>✏️ PDF 文字编辑</h1>
+  <p style="color:var(--text2);margin-bottom:4px">所有文字可直接点击编辑，就像在 Word 里一样</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:16px">🔒 浏览器本地处理。点击文字 → 直接输入 → 点其他地方自动保存修改。</p>
+
+  <div class="upload-zone" id="upload" style="padding:30px;margin:0 0 16px"><span class="upload-icon">📄</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+
+  <div id="editorArea" class="hidden" style="margin-top:16px">
+    <div class="toolbar">
+      <button class="btn btn-secondary btn-sm" id="prevBtn">◀ 上一页</button>
+      <span style="font-size:13px" id="pageInfo"></span>
+      <button class="btn btn-secondary btn-sm" id="nextBtn">下一页 ▶</button>
+      <span style="flex:1"></span>
+      <span style="font-size:12px;color:var(--text2)">已编辑 <b style="color:var(--green)" id="editCount">0</b> 处</span>
+      <button class="btn btn-primary btn-sm" id="saveBtn">💾 保存 PDF</button>
+    </div>
+    <div id="pagesContainer"></div>
+    <div class="tip">💡 任意文字直接点击就能改。Tab 跳到下一段。改完右上角点保存。</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+var pdfDoc=null, totalPages=0, srcBytes=null, currentPage=1;
+var edits={}, scale=1.5, allSpanData=[];
+
+initUploadZone('upload', function(files) {
+  files[0].arrayBuffer().then(function(buf) {
+    srcBytes = buf;
+    return pdfjsLib.getDocument({data: buf}).promise;
+  }).then(function(doc) {
+    pdfDoc = doc; totalPages = doc.numPages;
+    document.getElementById('editorArea').classList.remove('hidden');
+    document.getElementById('upload').style.opacity='0.5';
+    renderPage(1);
+  });
+}, {multiple:false, accept:'.pdf'});
+
+document.getElementById('prevBtn').onclick=function(){if(currentPage>1)renderPage(currentPage-1);};
+document.getElementById('nextBtn').onclick=function(){if(currentPage<totalPages)renderPage(currentPage+1);};
+
+function renderPage(num) {
+  currentPage=num;
+  document.getElementById('pageInfo').textContent='第 '+num+'/'+totalPages+' 页';
+
+  pdfDoc.getPage(num).then(function(page){
+    var vp=page.getViewport({scale:scale});
+    var container=document.getElementById('pagesContainer');
+    container.innerHTML='';
+
+    var wrap=document.createElement('div');
+    wrap.className='page-wrap';
+    wrap.style.width=vp.width+'px';wrap.style.height=vp.height+'px';
+
+    // Faint canvas for visual context
+    var cv=document.createElement('canvas');
+    cv.width=vp.width;cv.height=vp.height;
+    cv.style.width='100%';cv.style.height='100%';
+    wrap.appendChild(cv);
+    page.render({canvasContext:cv.getContext('2d'),viewport:vp});
+
+    // Text overlay - all spans contenteditable
+    var overlay=document.createElement('div');
+    overlay.className='text-overlay';
+    overlay.style.width=vp.width+'px';overlay.style.height=vp.height+'px';
+    overlay.style.setProperty('--scale-factor','1');
+    wrap.appendChild(overlay);
+    container.appendChild(wrap);
+
+    page.getTextContent().then(function(tc){
+      // Render using PDF.js text layer API
+      return pdfjsLib.renderTextLayer({
+        textContentSource: tc, container: overlay, viewport: vp,
+        textDivs: []
+      }).promise;
+    }).then(function(){
+      var spans=overlay.querySelectorAll('span');
+      allSpanData=[];
+
+      spans.forEach(function(span, idx){
+        if(!span.textContent.trim()){span.remove();return;}
+        // Make each span directly editable
+        span.contentEditable='true';
+        span.setAttribute('spellcheck','false');
+        span.dataset.index=idx;
+        span.dataset.original=span.textContent;
+        span.style.fontSize=getComputedStyle(span).fontSize;
+
+        // Apply existing edits
+        var pageEdits=edits[num]||[];
+        for(var j=0;j<pageEdits.length;j++){
+          if(span.dataset.original===pageEdits[j].oldText){
+            span.textContent=pageEdits[j].newText;
+            span.classList.add('edited');break;
+          }
+        }
+
+        // Track edits
+        span.addEventListener('input', function(){
+          var orig=this.dataset.original;
+          var curr=this.textContent;
+          if(curr!==orig){
+            edits[num]=edits[num]||[];
+            // Update or add edit
+            var found=false;
+            for(var k=0;k<edits[num].length;k++){
+              if(edits[num][k].oldText===orig){edits[num][k].newText=curr;found=true;break;}
+            }
+            if(!found) edits[num].push({oldText:orig, newText:curr});
+            this.classList.add('edited');
+          }else{
+            // Reverted to original
+            edits[num]=edits[num]||[];
+            edits[num]=edits[num].filter(function(e){return e.oldText!==orig;});
+            this.classList.remove('edited');
+          }
+          updateEditCount();
+        });
+
+        // Tab to next span
+        span.addEventListener('keydown', function(e){
+          if(e.key==='Tab'){
+            e.preventDefault();
+            var next=this.parentElement.querySelectorAll('span')[parseInt(this.dataset.index)+1];
+            if(next){next.focus();next.select();}
+          }
+        });
+      });
+    });
+  });
+}
+
+function updateEditCount(){
+  var total=0;
+  Object.keys(edits).forEach(function(k){total+=edits[k].length;});
+  document.getElementById('editCount').textContent=total;
+}
+
+// Save: apply edits to PDF
+document.getElementById('saveBtn').onclick=function(){
+  if(!Object.keys(edits).length){alert('没有编辑内容');return;}
+
+  PDFLib.PDFDocument.load(srcBytes,{ignoreEncryption:true}).then(function(doc){
+    return doc.embedFont(PDFLib.StandardFonts.Helvetica).then(function(font){
+      var pages=doc.getPages();
+
+      // Re-extract all text with positions to apply edits accurately
+      var pagePromises=[];
+      for(var pn=1;pn<=totalPages;pn++){
+        (function(pageNum){
+          pagePromises.push(
+            pdfDoc.getPage(pageNum).then(function(page){
+              var vp=page.getViewport({scale:1});
+              return page.getTextContent().then(function(tc){
+                var pdfPage=pages[pageNum-1];
+                var h=pdfPage.getSize().height;
+                var pageEdits=edits[pageNum]||[];
+                if(!pageEdits.length) return;
+
+                tc.items.forEach(function(item){
+                  if(!item.str.trim())return;
+                  var tx=item.transform, x=tx[4], y=h-(vp.height-tx[5]);
+                  for(var j=0;j<pageEdits.length;j++){
+                    if(item.str.trim()===pageEdits[j].oldText){
+                      // Whiteout old + draw new
+                      pdfPage.drawRectangle({
+                        x:x-1,y:y-item.height-1,
+                        width:Math.max(item.width+20,60),height:item.height+6,
+                        color:PDFLib.rgb(1,1,1)
+                      });
+                      pdfPage.drawText(pageEdits[j].newText,{
+                        x:x,y:y-item.height+2,
+                        size:Math.max(item.height*0.9,6),
+                        font:font,color:PDFLib.rgb(0,0,0)
+                      });
+                      break;
+                    }
+                  }
+                });
+              });
+            })
+          );
+        })(pn);
+      }
+      return Promise.all(pagePromises).then(function(){return doc.save();});
+    });
+  }).then(function(data){
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data]));
+    a.download='edited.pdf';a.click();
+    alert('✅ PDF 已保存！');
+  }).catch(function(e){
+    alert('保存失败: '+e.message);
+  });
+};
+</script>
+</body></html>

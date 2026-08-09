@@ -1,0 +1,58 @@
+/* 全局样式 */
+page {
+  --blue: #1677FF;
+  --blue-light: #E6F4FF;
+  --green: #52C41A;
+  --red: #FF4D4F;
+  --text: #1A1A1A;
+  --text2: #999;
+  --bg: #F5F5F5;
+  --card: #FFFFFF;
+  --radius: 16rpx;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+/* 通用卡片 */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 32rpx;
+}
+
+/* 通用按钮 */
+.btn-primary {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+.btn-primary::after { border: none; }
+
+.btn-primary[disabled] {
+  background: #CCC;
+  color: #999;
+}
+
+/* 安全区 */
+.safe-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* flex工具 */
+.flex-row {
+  display: flex;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

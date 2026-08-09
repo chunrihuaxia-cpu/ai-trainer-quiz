@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>AI PDF总结</title><link rel="stylesheet" href="/css/style.css">
+<style>.ai-result{background:var(--card);border-radius:var(--radius);padding:20px;margin-top:16px;line-height:1.8;white-space:pre-wrap;font-size:15px;box-shadow:var(--shadow)}
+.ai-result li{margin:4px 0;padding-left:8px}.spinner-sm{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite}</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a><button class="nav-lang" onclick="I18n.switch(I18n._lang==='zh'?'en':'zh')">EN</button></div></nav>
+<div class="container" style="max-width:800px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>🤖 AI PDF 总结</h1>
+  <p style="color:var(--text2);margin-bottom:4px">上传 PDF，AI 自动提取要点摘要</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:16px">🔒 PDF 文件在浏览器提取文字，不上传。仅文本发送给 AI 处理。</p>
+
+  <div class="upload-zone" id="upload"><span class="upload-icon">🤖</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+
+  <div class="progress-bar hidden" id="progressWrap"><div class="progress-fill" id="progressBar"></div></div>
+  <div id="resultArea"></div>
+</div>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+const pdfjsLib=window.pdfjsLib;
+
+initUploadZone('upload',async([file])=>{
+  const wrap=document.getElementById('progressWrap'),bar=document.getElementById('progressBar');
+  wrap.classList.remove('hidden');bar.style.width='10%';
+
+  // Extract text client-side with PDF.js
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let allText='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    allText+=content.items.map(it=>it.str).join(' ')+'\n';
+    bar.style.width=Math.round(10+i/pdf.numPages*40)+'%';
+  }
+
+  // Send text to AI
+  bar.style.width='60%';
+  const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:allText,mode:'summarize'})});
+  const data=await resp.json();
+  bar.style.width='100%';wrap.classList.add('hidden');
+
+  document.getElementById('resultArea').innerHTML=data.error?`<div class="ai-result" style="border-color:var(--red)"><p>❌ ${data.error}</p></div>`:`<div class="ai-result"><div style="color:var(--primary);font-weight:700;margin-bottom:8px">📋 AI 总结</div>${data.result.replace(/\n/g,'<br>')}</div>`;
+},{multiple:false,accept:'.pdf'});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs" type="module"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';</script>
+</body></html>

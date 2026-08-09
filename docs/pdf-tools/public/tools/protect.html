@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF加密</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:600px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>🔐 PDF 加密</h1>
+  <p style="color:var(--text2);margin-bottom:4px">给 PDF 设置打开密码</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理，密码不上传</p>
+  <div class="upload-zone" id="upload" style="padding:30px;margin-bottom:16px"><span class="upload-icon">🔐</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="config" class="hidden" style="margin-top:12px">
+    <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px">设置密码</label>
+    <input id="pwd" type="password" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:16px" placeholder="输入密码">
+    <button class="btn btn-primary" style="width:100%" onclick="window._apply()">🔐 加密并下载</button>
+  </div>
+</div>
+<script src="/js/pdf-lib.min.js"></script>
+<script>
+var srcBytes=null;
+document.getElementById('upload').addEventListener('click',function(){var i=document.createElement('input');i.type='file';i.accept='.pdf';i.onchange=function(e){var f=e.target.files[0];f.arrayBuffer().then(function(b){srcBytes=b;document.getElementById('config').classList.remove('hidden');document.getElementById('upload').style.opacity='0.5'})};i.click()});
+['dragover','drop'].forEach(function(ev){document.getElementById('upload').addEventListener(ev,function(e){e.preventDefault();if(ev==='drop'){e.dataTransfer.files[0].arrayBuffer().then(function(b){srcBytes=b;document.getElementById('config').classList.remove('hidden');document.getElementById('upload').style.opacity='0.5'})}})});
+window._apply=async function(){
+  var pwd=document.getElementById('pwd').value;if(!pwd){alert('请输入密码');return}
+  var {PDFDocument}=PDFLib,doc=await PDFDocument.load(srcBytes,{ignoreEncryption:true});
+  doc.encrypt({userPassword:pwd,ownerPassword:pwd+'owner',permissions:{printing:'highResolution',modifying:false,copying:true}});
+  var data=await doc.save();var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='protected.pdf';a.click();
+};
+</script>
+</body></html>

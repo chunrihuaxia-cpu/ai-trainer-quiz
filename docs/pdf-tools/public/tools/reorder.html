@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PDF重新排序</title><link rel="stylesheet" href="/css/style.css">
+<style>.page-thumb{display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:grab;padding:8px;border:1px solid var(--border);border-radius:8px;transition:.2s;user-select:none}.page-thumb canvas{width:100px;border-radius:4px}.page-thumb.dragging{opacity:.5;border-color:var(--primary)}.page-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}</style></head><body>
+<nav class="nav"><a href="/" class="nav-brand">PDFTool<span style="color:var(--green);font-size:11px;margin-left:4px">🔒</span></a><div class="nav-links"><a href="/" class="nav-link">首页</a></div></nav>
+<div class="container" style="max-width:900px">
+  <a href="/" class="page-back">← 首页</a>
+  <h1>↔️ 页面重新排序</h1>
+  <p style="color:var(--text2);margin-bottom:4px">拖拽页面缩略图调整顺序</p>
+  <p style="font-size:12px;color:var(--green);margin-bottom:24px">🔒 浏览器本地处理</p>
+  <div class="upload-zone" id="upload" style="padding:30px"><span class="upload-icon">↔️</span><div class="upload-text">点击选择 PDF，或拖拽到此处</div></div>
+  <div id="workspace" class="hidden" style="margin-top:12px">
+    <div class="page-grid" id="pageGrid"></div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="window._apply()">💾 保存新排序</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/js/pdf-lib.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var srcBytes=null, order=[], dragIdx=-1;
+
+document.getElementById('upload').addEventListener('click',function(){var i=document.createElement('input');i.type='file';i.accept='.pdf';i.onchange=function(e){loadPDF(e.target.files[0])};i.click()});
+['dragover','drop'].forEach(function(ev){document.getElementById('upload').addEventListener(ev,function(e){e.preventDefault();if(ev==='drop')loadPDF(e.dataTransfer.files[0])})});
+
+async function loadPDF(f){srcBytes=await f.arrayBuffer();var doc=await pdfjsLib.getDocument({data:srcBytes}).promise;var n=doc.numPages;order=Array.from({length:n},function(_,i){return i});document.getElementById('workspace').classList.remove('hidden');document.getElementById('upload').style.opacity='0.5';renderThumbs(doc);}
+
+async function renderThumbs(doc){var grid=document.getElementById('pageGrid');grid.innerHTML='';
+  for(var i=0;i<order.length;i++){var p=await doc.getPage(order[i]+1);var vp=p.getViewport({scale:.5});var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    var div=document.createElement('div');div.className='page-thumb';div.draggable=true;div.dataset.idx=i;
+    div.appendChild(cv);div.appendChild(document.createTextNode('第'+(order[i]+1)+'页'));
+    div.addEventListener('dragstart',function(e){dragIdx=parseInt(this.dataset.idx);this.classList.add('dragging')});
+    div.addEventListener('dragover',function(e){e.preventDefault()});
+    div.addEventListener('drop',function(e){e.preventDefault();var to=parseInt(this.dataset.idx);if(dragIdx!==to){var tmp=order[dragIdx];order.splice(dragIdx,1);order.splice(to,0,tmp);renderThumbs(doc)}this.classList.remove('dragging')});
+    div.addEventListener('dragend',function(){this.classList.remove('dragging')});
+    grid.appendChild(div);
+  }
+}
+
+window._apply=async function(){
+  var {PDFDocument}=PDFLib,src=await PDFDocument.load(srcBytes,{ignoreEncryption:true}),dest=await PDFDocument.create();
+  var pages=await dest.copyPages(src,order);pages.forEach(function(p){dest.addPage(p)});
+  var data=await dest.save();var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download='reordered.pdf';a.click();
+};
+</script>
+</body></html>

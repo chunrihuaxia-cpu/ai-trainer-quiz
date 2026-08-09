@@ -1,0 +1,54 @@
+/* Desktop Pet — Screen Buddy Styles */
+#__screenbuddy_pet {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+}
+
+/* ── Pet Container ── */
+.sb-pet {
+  position: fixed !important;
+  width: 64px; height: 64px;
+  cursor: grab;
+  user-select: none;
+  pointer-events: auto !important;
+  z-index: 2147483647 !important;
+  filter: drop-shadow(3px 6px 8px rgba(0,0,0,.18));
+  transition: transform 0.15s ease;
+}
+.sb-pet:active { cursor: grabbing; }
+.sb-pet:hover { transform: scale(1.06); }
+
+/* ── Speech Bubble ── */
+.sb-bubble {
+  position: fixed !important;
+  background: #fff;
+  border: 2px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: -apple-system, 'PingFang SC', sans-serif;
+  white-space: nowrap;
+  pointer-events: none !important;
+  z-index: 2147483646 !important;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.sb-bubble.show { opacity: 1; transform: translateY(0); }
+
+/* ── Zzz sleep particles ── */
+.sb-zzz {
+  position: fixed !important;
+  font-size: 16px;
+  pointer-events: none !important;
+  z-index: 2147483646 !important;
+  opacity: 0;
+  animation: sbFloatUp 2s ease-out infinite;
+}
+.sb-zzz.show { opacity: .7; }
+@keyframes sbFloatUp {
+  0% { opacity: .7; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-30px) scale(1.3); }
+}

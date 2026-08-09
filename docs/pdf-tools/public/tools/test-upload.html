@@ -1,0 +1,14 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Test</title><link rel="stylesheet" href="/css/style.css"></head><body>
+<div class="container">
+  <h1>Upload Test</h1>
+  <div class="upload-zone" id="test">CLICK ME</div>
+  <div id="result"></div>
+</div>
+<script type="module">
+import { initUploadZone } from '/js/common.js';
+console.log('Module loaded, initUploadZone:', typeof initUploadZone);
+initUploadZone('test', (files) => {
+  document.getElementById('result').textContent = '✅ File: ' + files[0].name;
+}, {multiple: false, accept: '.pdf'});
+</script>
+</body></html>
